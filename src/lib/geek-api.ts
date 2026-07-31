@@ -284,3 +284,63 @@ export function rejectStrategyBrief(id: string) {
     method: "PATCH",
   });
 }
+
+// —— Client profiles + versions (GCW facade over Repository) ——
+
+export type ClientProfile = {
+  id: string;
+  clientId: string;
+  name: string;
+  createdAtUtc: string;
+  updatedAtUtc: string;
+};
+
+export type ClientProfileVersion = {
+  id: string;
+  profileId: string;
+  version: number;
+  approvedFacts: Record<string, unknown>;
+  prohibitedClaims: Record<string, unknown>;
+  createdAtUtc: string;
+  rowVersion: number;
+};
+
+export function getClientProfileByClientId(clientId: string) {
+  return geekApiFetch<ClientProfile>(
+    `/api/gcw/client-profiles/by-client/${encodeURIComponent(clientId)}`,
+  );
+}
+
+export function getClientProfile(id: string) {
+  return geekApiFetch<ClientProfile>(`/api/gcw/client-profiles/${id}`);
+}
+
+export function createClientProfile(body: { clientId: string; name: string }) {
+  return geekApiFetch<ClientProfile>("/api/gcw/client-profiles", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
+
+export function listClientProfileVersions(profileId: string) {
+  return geekApiFetch<ClientProfileVersion[]>(
+    `/api/gcw/client-profile-versions?profileId=${encodeURIComponent(profileId)}`,
+  );
+}
+
+export function getClientProfileVersion(id: string) {
+  return geekApiFetch<ClientProfileVersion>(
+    `/api/gcw/client-profile-versions/${id}`,
+  );
+}
+
+export function createClientProfileVersion(body: {
+  profileId: string;
+  approvedFacts?: Record<string, unknown>;
+  prohibitedClaims?: Record<string, unknown>;
+}) {
+  return geekApiFetch<ClientProfileVersion>("/api/gcw/client-profile-versions", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}

@@ -149,6 +149,16 @@ export default async function StrategyBriefsPage({
         </button>
       </form>
 
+      {selectedCampaignId ? (
+        <p className="mt-3 text-xs text-gcw-zinc">
+          Selected campaign profileVersionId:{" "}
+          <code>
+            {campaigns.find((c) => c.id === selectedCampaignId)
+              ?.profileVersionId || "—"}
+          </code>
+        </p>
+      ) : null}
+
       {selectedClientId ? (
         <form
           action={createCampaignAction}

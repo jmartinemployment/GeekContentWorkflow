@@ -1,6 +1,14 @@
 import Link from "next/link";
 import { revalidatePath } from "next/cache";
-import { createClient, listClients, listProjects } from "@/lib/geek-api";
+import {
+  createClient,
+  GeekApiError,
+  getClientProfileByClientId,
+  listClients,
+  listProjects,
+  type ClientProfile,
+  type CwClient,
+} from "@/lib/geek-api";
 
 async function createClientAction(formData: FormData) {
   "use server";
@@ -12,8 +20,20 @@ async function createClientAction(formData: FormData) {
   revalidatePath("/app/brand-core");
 }
 
+async function loadProfile(
+  clientId: string,
+): Promise<ClientProfile | null> {
+  try {
+    return await getClientProfileByClientId(clientId);
+  } catch (e) {
+    if (e instanceof GeekApiError && e.status === 404) return null;
+    throw e;
+  }
+}
+
 export default async function BrandCorePage() {
-  let clients: Awaited<ReturnType<typeof listClients>> = [];
+  let clients: CwClient[] = [];
+  let profilesByClient = new Map<string, ClientProfile | null>();
   let projectCount = 0;
   let error: string | null = null;
 
@@ -21,6 +41,10 @@ export default async function BrandCorePage() {
     clients = await listClients();
     const projects = await listProjects().catch(() => []);
     projectCount = projects.length;
+    const pairs = await Promise.all(
+      clients.map(async (c) => [c.id, await loadProfile(c.id)] as const),
+    );
+    profilesByClient = new Map(pairs);
   } catch (e) {
     error = e instanceof Error ? e.message : "Failed to load clients";
   }
@@ -34,8 +58,8 @@ export default async function BrandCorePage() {
         Clients
       </h1>
       <p className="mt-2 text-gcw-muted">
-        CWV2 <code className="text-xs">/api/clients</code> via GeekAPI. Each client
-        owns projects (crawl → generate → publish).
+        Each client can have a brand profile with versioned facts and prohibited
+        claims. Campaigns pick up the latest version automatically.
       </p>
 
       {error ? (
@@ -70,27 +94,43 @@ export default async function BrandCorePage() {
       </form>
 
       <ul className="mt-8 space-y-3">
-        {clients.map((c) => (
-          <li
-            key={c.id}
-            className="rounded-xl border border-gcw-line bg-white px-4 py-3"
-          >
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <p className="font-medium">{c.name}</p>
-                {c.notes ? (
-                  <p className="mt-1 text-sm text-gcw-muted">{c.notes}</p>
-                ) : null}
+        {clients.map((c) => {
+          const profile = profilesByClient.get(c.id) ?? null;
+          return (
+            <li
+              key={c.id}
+              className="rounded-xl border border-gcw-line bg-white px-4 py-3"
+            >
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <p className="font-medium">{c.name}</p>
+                  {c.notes ? (
+                    <p className="mt-1 text-sm text-gcw-muted">{c.notes}</p>
+                  ) : null}
+                  <p className="mt-1 text-xs text-gcw-zinc">
+                    {profile
+                      ? `Profile: ${profile.name}`
+                      : "No brand profile yet"}
+                  </p>
+                </div>
+                <div className="flex shrink-0 items-center gap-3">
+                  <Link
+                    href={`/app/brand-core/${c.id}`}
+                    className="text-sm font-medium text-gcw-ink underline-offset-2 hover:underline"
+                  >
+                    {profile ? "Open profile →" : "Create profile →"}
+                  </Link>
+                  <Link
+                    href={`/app/strategy-map?clientId=${c.id}`}
+                    className="text-sm font-medium text-gcw-muted underline-offset-2 hover:underline"
+                  >
+                    Projects
+                  </Link>
+                </div>
               </div>
-              <Link
-                href={`/app/strategy-map?clientId=${c.id}`}
-                className="shrink-0 text-sm font-medium text-gcw-ink underline-offset-2 hover:underline"
-              >
-                Projects →
-              </Link>
-            </div>
-          </li>
-        ))}
+            </li>
+          );
+        })}
         {clients.length === 0 && !error ? (
           <li className="text-sm text-gcw-muted">No clients yet.</li>
         ) : null}
