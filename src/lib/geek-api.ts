@@ -793,3 +793,67 @@ export function createApprovalEvent(body: {
     body: JSON.stringify(body),
   });
 }
+
+// —— Publications ——
+
+export const PUBLICATION_STATUSES = ["draft", "published", "failed"] as const;
+
+export type Publication = {
+  id: string;
+  assetVersionId: string;
+  status: string;
+  responseSnapshot?: Record<string, unknown> | null;
+  error?: string | null;
+  createdAtUtc: string;
+  updatedAtUtc: string;
+};
+
+export type PublicationEvent = {
+  id: string;
+  publicationId: string;
+  userId: string;
+  status: string;
+  details?: string | null;
+  createdAtUtc: string;
+};
+
+export function listPublications(assetVersionId: string) {
+  return geekApiFetch<Publication[]>(
+    `/api/gcw/publications?assetVersionId=${encodeURIComponent(assetVersionId)}`,
+  );
+}
+
+export function getPublication(id: string) {
+  return geekApiFetch<Publication>(`/api/gcw/publications/${id}`);
+}
+
+export function createPublication(body: { assetVersionId: string }) {
+  return geekApiFetch<Publication>("/api/gcw/publications", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
+
+export function updatePublicationStatus(id: string, status: string) {
+  return geekApiFetch<Publication>(`/api/gcw/publications/${id}/status`, {
+    method: "PATCH",
+    body: JSON.stringify({ status }),
+  });
+}
+
+export function listPublicationEvents(publicationId: string) {
+  return geekApiFetch<PublicationEvent[]>(
+    `/api/gcw/publication-events?publicationId=${encodeURIComponent(publicationId)}`,
+  );
+}
+
+export function createPublicationEvent(body: {
+  publicationId: string;
+  status: string;
+  details?: string | null;
+}) {
+  return geekApiFetch<PublicationEvent>("/api/gcw/publication-events", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
