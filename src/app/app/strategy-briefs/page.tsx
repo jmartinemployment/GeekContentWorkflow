@@ -7,8 +7,10 @@ import {
   createStrategyBrief,
   listCampaigns,
   listClients,
+  listPainPoints,
   listStrategyBriefs,
   type GcwCampaign,
+  type PainPoint,
   type StrategyBrief,
 } from "@/lib/geek-api";
 
@@ -31,6 +33,7 @@ async function createBriefAction(formData: FormData) {
   const buyingStage = String(formData.get("buyingStage") || "").trim();
   const angle = String(formData.get("angle") || "").trim();
   const callToAction = String(formData.get("callToAction") || "").trim();
+  const painPointId = String(formData.get("painPointId") || "").trim() || null;
   if (!campaignId || !audienceProfile || !buyingStage || !angle || !callToAction) {
     return;
   }
@@ -41,6 +44,7 @@ async function createBriefAction(formData: FormData) {
     buyingStage,
     angle,
     callToAction,
+    painPointId,
   });
   revalidatePath("/app/strategy-briefs");
   redirect(`/app/strategy-briefs/${brief.id}`);
@@ -68,6 +72,7 @@ export default async function StrategyBriefsPage({
   let clients: Awaited<ReturnType<typeof listClients>> = [];
   let campaigns: GcwCampaign[] = [];
   let briefs: StrategyBrief[] = [];
+  let painPoints: PainPoint[] = [];
   let error: string | null = null;
 
   try {
@@ -76,7 +81,10 @@ export default async function StrategyBriefsPage({
       filterClientId || (clients.length === 1 ? clients[0].id : "");
 
     if (clientId) {
-      campaigns = await listCampaigns(clientId);
+      [campaigns, painPoints] = await Promise.all([
+        listCampaigns(clientId),
+        listPainPoints(clientId),
+      ]);
     }
 
     const campaignId =
@@ -231,6 +239,30 @@ export default async function StrategyBriefsPage({
             placeholder="Call to action"
             className="w-full rounded-lg border border-gcw-line px-3 py-2 text-sm"
           />
+          <select
+            name="painPointId"
+            defaultValue=""
+            className="w-full rounded-lg border border-gcw-line px-3 py-2 text-sm"
+          >
+            <option value="">No pain point (optional)</option>
+            {painPoints.map((pp) => (
+              <option key={pp.id} value={pp.id}>
+                {pp.name}
+              </option>
+            ))}
+          </select>
+          {painPoints.length === 0 ? (
+            <p className="text-xs text-gcw-zinc">
+              No pain points yet —{" "}
+              <Link
+                href={`/app/pain-points?clientId=${selectedClientId}`}
+                className="underline-offset-2 hover:underline"
+              >
+                create one
+              </Link>
+              .
+            </p>
+          ) : null}
           <button
             type="submit"
             className="rounded-pill bg-gcw-ink px-4 py-2 text-sm font-semibold text-white"

@@ -407,3 +407,46 @@ export function updateKeywordStatus(id: string, status: string) {
     body: JSON.stringify({ status }),
   });
 }
+
+// —— Pain points (GCW facade over Repository) ——
+
+export type PainPoint = {
+  id: string;
+  clientId: string;
+  name: string;
+  description: string;
+  readerSymptom: string;
+  costOfInaction: string;
+  offerTerminology: string;
+  objections: string[];
+  confidence: number;
+  staleSinceUtc?: string | null;
+  createdAtUtc: string;
+  updatedAtUtc: string;
+};
+
+export function listPainPoints(clientId: string) {
+  return geekApiFetch<PainPoint[]>(
+    `/api/gcw/pain-points?clientId=${encodeURIComponent(clientId)}`,
+  );
+}
+
+export function getPainPoint(id: string) {
+  return geekApiFetch<PainPoint>(`/api/gcw/pain-points/${id}`);
+}
+
+export function createPainPoint(body: {
+  clientId: string;
+  name: string;
+  description: string;
+  readerSymptom: string;
+  costOfInaction: string;
+  offerTerminology: string;
+  objections?: string[];
+  confidence?: number;
+}) {
+  return geekApiFetch<PainPoint>("/api/gcw/pain-points", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
