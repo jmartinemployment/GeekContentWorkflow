@@ -10,9 +10,13 @@ import {
   getPainPoint,
   getStrategyBrief,
   listAssets,
+  listDraftTemplates,
+  listTonePresets,
   rejectStrategyBrief,
   updateStrategyBrief,
   type ContentAsset,
+  type DraftTemplate,
+  type TonePreset,
 } from "@/lib/geek-api";
 
 const EMPTY_GUID = "00000000-0000-0000-0000-000000000000";
@@ -62,6 +66,8 @@ async function generateDraftAction(formData: FormData) {
   const campaignId = String(formData.get("campaignId") || "");
   const assetName = String(formData.get("assetName") || "").trim();
   const provider = String(formData.get("provider") || "OpenAi").trim();
+  const templateSlug = String(formData.get("templateSlug") || "").trim();
+  const tone = String(formData.get("tone") || "").trim();
 
   if (!briefId || !clientId || !campaignId) return;
 
@@ -79,6 +85,8 @@ async function generateDraftAction(formData: FormData) {
     const version = await generateDraftFromBrief(briefId, {
       assetId,
       provider,
+      ...(templateSlug ? { templateSlug } : {}),
+      ...(tone ? { tone } : {}),
     });
     revalidatePath(`/app/strategy-briefs/${briefId}`);
     revalidatePath(`/app/assets/${assetId}`);
@@ -116,6 +124,8 @@ export default async function StrategyBriefDetailPage({
   let clientId = "";
   let painPointName: string | null = null;
   let assets: ContentAsset[] = [];
+  let templates: DraftTemplate[] = [];
+  let tones: TonePreset[] = [];
   let error: string | null = queryError || null;
 
   try {
@@ -135,7 +145,11 @@ export default async function StrategyBriefDetailPage({
         painPointName = null;
       }
     }
-    assets = await listAssets(brief.campaignId).catch(() => []);
+    [assets, templates, tones] = await Promise.all([
+      listAssets(brief.campaignId).catch(() => [] as ContentAsset[]),
+      listDraftTemplates().catch(() => [] as DraftTemplate[]),
+      listTonePresets().catch(() => [] as TonePreset[]),
+    ]);
   } catch (e) {
     error = e instanceof Error ? e.message : "Failed to load brief";
   }
@@ -318,6 +332,34 @@ export default async function StrategyBriefDetailPage({
           defaultValue={`${brief.angle.slice(0, 48)} draft`}
           className="w-full rounded-lg border border-gcw-line px-3 py-2 text-sm"
         />
+        <label className="block text-sm">
+          <span className="mb-1 block text-gcw-muted">Template</span>
+          <select
+            name="templateSlug"
+            defaultValue="blog-pillar"
+            className="w-full rounded-lg border border-gcw-line px-3 py-2 text-sm"
+          >
+            {templates.map((t) => (
+              <option key={t.slug} value={t.slug}>
+                {t.name} — {t.description}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="block text-sm">
+          <span className="mb-1 block text-gcw-muted">Tone</span>
+          <select
+            name="tone"
+            defaultValue="professional"
+            className="w-full rounded-lg border border-gcw-line px-3 py-2 text-sm"
+          >
+            {tones.map((t) => (
+              <option key={t.slug} value={t.slug}>
+                {t.name} — {t.description}
+              </option>
+            ))}
+          </select>
+        </label>
         <label className="block text-sm">
           <span className="mb-1 block text-gcw-muted">Provider</span>
           <select

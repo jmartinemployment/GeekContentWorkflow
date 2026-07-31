@@ -370,7 +370,12 @@ export function rejectStrategyBrief(id: string) {
 /** Brand-grounded structured draft → new asset version (Horizon B). */
 export function generateDraftFromBrief(
   briefId: string,
-  body: { assetId: string; provider?: string },
+  body: {
+    assetId: string;
+    provider?: string;
+    templateSlug?: string;
+    tone?: string;
+  },
 ) {
   return geekApiFetch<ContentAssetVersion>(
     `/api/gcw/strategy-briefs/${briefId}/generate`,
@@ -379,6 +384,29 @@ export function generateDraftFromBrief(
       body: JSON.stringify(body),
     },
   );
+}
+
+export type DraftTemplate = {
+  slug: string;
+  name: string;
+  description: string;
+  category: string;
+  guidance: string;
+};
+
+export type TonePreset = {
+  slug: string;
+  name: string;
+  description: string;
+  guidance: string;
+};
+
+export function listDraftTemplates() {
+  return geekApiFetch<DraftTemplate[]>("/api/gcw/drafting/templates");
+}
+
+export function listTonePresets() {
+  return geekApiFetch<TonePreset[]>("/api/gcw/drafting/tones");
 }
 
 // —— Client profiles + versions (GCW facade over Repository) ——
@@ -913,7 +941,7 @@ export function updateAssetVersion(id: string, bodyDocumentJson: string) {
 /** Iterative revise: feedback → new ContentDocument version. */
 export function reviseAssetVersion(
   versionId: string,
-  body: { feedback: string; provider?: string },
+  body: { feedback: string; provider?: string; tone?: string },
 ) {
   return geekApiFetch<ContentAssetVersion>(
     `/api/gcw/asset-versions/${versionId}/revise`,

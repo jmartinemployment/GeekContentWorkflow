@@ -12,12 +12,14 @@ import {
   listApprovalEvents,
   listAssetVersions,
   listReviewComments,
+  listTonePresets,
   resolveReviewComment,
   reviseAssetVersion,
   updateAssetStatus,
   type ApprovalEvent,
   type ContentAssetVersion,
   type ReviewComment,
+  type TonePreset,
 } from "@/lib/geek-api";
 
 const DEFAULT_DOC = JSON.stringify(
@@ -113,10 +115,15 @@ async function reviseVersionAction(formData: FormData) {
   const versionId = String(formData.get("versionId") || "");
   const feedback = String(formData.get("feedback") || "").trim();
   const provider = String(formData.get("provider") || "OpenAi").trim();
+  const tone = String(formData.get("tone") || "").trim();
   if (!assetId || !versionId || !feedback) return;
 
   try {
-    const version = await reviseAssetVersion(versionId, { feedback, provider });
+    const version = await reviseAssetVersion(versionId, {
+      feedback,
+      provider,
+      ...(tone ? { tone } : {}),
+    });
     revalidatePath(`/app/assets/${assetId}`);
     redirect(
       `/app/assets/${assetId}?clientId=${clientId}&versionId=${version.id}`,
@@ -181,6 +188,7 @@ export default async function AssetDetailPage({
   let versions: ContentAssetVersion[] = [];
   let comments: ReviewComment[] = [];
   let approvals: ApprovalEvent[] = [];
+  let tones: TonePreset[] = [];
   let error: string | null = queryError || null;
 
   try {
@@ -191,7 +199,10 @@ export default async function AssetDetailPage({
     } catch {
       campaignName = null;
     }
-    versions = await listAssetVersions(id);
+    [versions, tones] = await Promise.all([
+      listAssetVersions(id),
+      listTonePresets().catch(() => [] as TonePreset[]),
+    ]);
     versions = [...versions].sort((a, b) => b.versionNumber - a.versionNumber);
   } catch (e) {
     error = e instanceof Error ? e.message : "Failed to load asset";
@@ -360,6 +371,17 @@ export default async function AssetDetailPage({
               placeholder="e.g. Tighten the lede and add a short FAQ section before the CTA."
               className="w-full rounded-lg border border-gcw-line px-3 py-2 text-sm"
             />
+            <select
+              name="tone"
+              defaultValue="professional"
+              className="w-full rounded-lg border border-gcw-line px-3 py-2 text-sm"
+            >
+              {tones.map((t) => (
+                <option key={t.slug} value={t.slug}>
+                  {t.name} — {t.description}
+                </option>
+              ))}
+            </select>
             <select
               name="provider"
               defaultValue="OpenAi"
