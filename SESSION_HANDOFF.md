@@ -43,8 +43,15 @@ All smoke-tested against production unless noted.
 | **Horizon B: templates + tones** | **Done 2026-07-31** | `/api/gcw/drafting/templates|tones` |
 | **Horizon B: in-editor SEO** | **Done 2026-07-31** | `GET /api/gcw/asset-versions/{id}/seo` |
 | **Horizon B: polish ship-check** | **Done 2026-07-31** | `GET /api/gcw/asset-versions/{id}/polish` |
+| **Horizon B: repurpose packs** | **Done 2026-07-31** | `POST /api/gcw/asset-versions/{id}/repurpose` |
 
-### Polish ship-check (latest)
+### Repurpose packs (latest)
+
+**Backend `b07e048`:** `GenerateRepurposePackAsync` + catalog; creates companion assets (LinkedIn/X/Instagram/Meta/Google/email) from a pillar version.
+
+**Frontend `4b42093`:** `/app/repurpose` + Generate channel pack on pillar assets; smoke `scripts/smoke-repurpose.py` → **PASS**.
+
+### Polish ship-check (prior)
 
 **Backend `8735f22`:** `GcwPolishAnalyzer` + `GET /api/gcw/asset-versions/{id}/polish` (clarity/filler/placeholders/prohibited claims + `shipReady`).
 
@@ -128,10 +135,9 @@ All smoke-tested against production unless noted.
 
 ## Next work
 
-**Horizon B drafting excellence** (partial): generate + revise + templates/tones + SEO + polish are live.
+**Horizon B drafting excellence** — complete (generate, revise, templates/tones, SEO, polish, repurpose).
 
-Still open in Horizon B:
-- Repurpose: pillar → social/ad variants
+Next: Horizon C (social calendar, image-generator, video SEO) or polish existing surfaces.
 
 User preference: when they say **continue**, pick the next clear item and implement.
 
@@ -197,7 +203,7 @@ python3 scripts/smoke-brand-voices.py
 
 ```
 Continue Geek Content Workflow from SESSION_HANDOFF.md.
-Horizon B: generate + revise + templates/tones + SEO + polish shipped (backend 8735f22, frontend 8317e3c).
-Next: repurpose (pillar → social/ad variants).
+Horizon B complete (backend b07e048, frontend 4b42093) including repurpose packs.
+Next: Horizon C from LONG_TERM_PLAN.md, or deepen a shipped surface.
 Never call /api/content-writer/v3/*.
 ```
