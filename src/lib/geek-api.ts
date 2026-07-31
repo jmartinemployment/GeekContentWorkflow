@@ -974,6 +974,31 @@ export function getAssetVersionSeo(versionId: string) {
   return geekApiFetch<SeoReport>(`/api/gcw/asset-versions/${versionId}/seo`);
 }
 
+export type PolishCheck = {
+  id: string;
+  label: string;
+  passed: boolean;
+  severity: string;
+  detail: string;
+  fixHint?: string | null;
+};
+
+export type PolishReport = {
+  score: number;
+  shipReady: boolean;
+  wordCount: number;
+  sentenceCount: number;
+  avgSentenceWords: number;
+  checks: PolishCheck[];
+  applyFeedback: string;
+};
+
+export function getAssetVersionPolish(versionId: string) {
+  return geekApiFetch<PolishReport>(
+    `/api/gcw/asset-versions/${versionId}/polish`,
+  );
+}
+
 export function listReviewComments(assetVersionId: string) {
   return geekApiFetch<ReviewComment[]>(
     `/api/gcw/review-comments?assetVersionId=${encodeURIComponent(assetVersionId)}`,

@@ -14,11 +14,13 @@ import {
   listReviewComments,
   listTonePresets,
   getAssetVersionSeo,
+  getAssetVersionPolish,
   resolveReviewComment,
   reviseAssetVersion,
   updateAssetStatus,
   type ApprovalEvent,
   type ContentAssetVersion,
+  type PolishReport,
   type ReviewComment,
   type SeoReport,
   type TonePreset,
@@ -181,6 +183,41 @@ async function applySeoFixesAction(formData: FormData) {
   }
 }
 
+async function applyPolishFixesAction(formData: FormData) {
+  "use server";
+  const assetId = String(formData.get("assetId") || "");
+  const clientId = String(formData.get("clientId") || "");
+  const versionId = String(formData.get("versionId") || "");
+  const feedback = String(formData.get("feedback") || "").trim();
+  const provider = String(formData.get("provider") || "OpenAi").trim();
+  if (!assetId || !versionId || !feedback) return;
+
+  try {
+    const version = await reviseAssetVersion(versionId, {
+      feedback,
+      provider,
+      tone: "professional",
+    });
+    revalidatePath(`/app/assets/${assetId}`);
+    redirect(
+      `/app/assets/${assetId}?clientId=${clientId}&versionId=${version.id}`,
+    );
+  } catch (e) {
+    if (
+      typeof e === "object" &&
+      e &&
+      "digest" in e &&
+      String((e as { digest?: string }).digest).startsWith("NEXT_REDIRECT")
+    ) {
+      throw e;
+    }
+    const msg = e instanceof Error ? e.message : "Polish apply failed";
+    redirect(
+      `/app/assets/${assetId}?clientId=${clientId}&versionId=${versionId}&error=${encodeURIComponent(msg)}`,
+    );
+  }
+}
+
 async function createApprovalAction(formData: FormData) {
   "use server";
   const assetId = String(formData.get("assetId") || "");
@@ -189,6 +226,29 @@ async function createApprovalAction(formData: FormData) {
   const action = String(formData.get("action") || "").trim();
   const notes = String(formData.get("notes") || "").trim() || null;
   if (!assetId || !assetVersionId || !action) return;
+
+  if (action === "approved" || action === "submitted") {
+    try {
+      const polish = await getAssetVersionPolish(assetVersionId);
+      if (!polish.shipReady) {
+        redirect(
+          `/app/assets/${assetId}?clientId=${clientId}&versionId=${assetVersionId}&error=${encodeURIComponent(
+            "Ship check blocked: clear critical polish issues before submit/approve.",
+          )}`,
+        );
+      }
+    } catch (e) {
+      if (
+        typeof e === "object" &&
+        e &&
+        "digest" in e &&
+        String((e as { digest?: string }).digest).startsWith("NEXT_REDIRECT")
+      ) {
+        throw e;
+      }
+      // If polish endpoint fails, allow approval rather than hard-block.
+    }
+  }
 
   await createApprovalEvent({ assetVersionId, action, notes });
   if (action === "approved") {
@@ -227,6 +287,7 @@ export default async function AssetDetailPage({
   let approvals: ApprovalEvent[] = [];
   let tones: TonePreset[] = [];
   let seo: SeoReport | null = null;
+  let polish: PolishReport | null = null;
   let error: string | null = queryError || null;
 
   try {
@@ -251,10 +312,11 @@ export default async function AssetDetailPage({
 
   if (selectedVersionId) {
     try {
-      [comments, approvals, seo] = await Promise.all([
+      [comments, approvals, seo, polish] = await Promise.all([
         listReviewComments(selectedVersionId),
         listApprovalEvents(selectedVersionId),
         getAssetVersionSeo(selectedVersionId).catch(() => null),
+        getAssetVersionPolish(selectedVersionId).catch(() => null),
       ]);
       comments = [...comments].sort(
         (a, b) =>
@@ -468,6 +530,95 @@ export default async function AssetDetailPage({
             </div>
           ) : null}
 
+          {polish ? (
+            <div className="mt-10 rounded-2xl border border-gcw-line bg-white p-5">
+              <div className="flex flex-wrap items-baseline justify-between gap-2">
+                <h2 className="font-heading text-lg font-medium">
+                  Polish · v{selectedVersion.versionNumber}
+                </h2>
+                <p className="text-sm text-gcw-muted">
+                  Score{" "}
+                  <span className="font-semibold text-gcw-ink">
+                    {polish.score}
+                  </span>
+                  /100 ·{" "}
+                  <span
+                    className={
+                      polish.shipReady ? "text-emerald-700" : "text-amber-800"
+                    }
+                  >
+                    {polish.shipReady ? "Ship ready" : "Ship check blocked"}
+                  </span>
+                </p>
+              </div>
+              <p className="mt-1 text-xs text-gcw-zinc">
+                {polish.wordCount} words · {polish.sentenceCount} sentences ·
+                avg {polish.avgSentenceWords} words/sentence
+              </p>
+              <ul className="mt-4 space-y-2">
+                {polish.checks.map((c) => (
+                  <li
+                    key={c.id}
+                    className="rounded-lg border border-gcw-line px-3 py-2 text-sm"
+                  >
+                    <p>
+                      <span
+                        className={
+                          c.passed ? "text-emerald-700" : "text-amber-800"
+                        }
+                      >
+                        {c.passed ? "Pass" : "Fix"}
+                      </span>
+                      {" · "}
+                      <span className="font-medium">{c.label}</span>
+                      <span className="text-gcw-zinc">
+                        {" "}
+                        ({c.severity})
+                      </span>
+                    </p>
+                    <p className="mt-0.5 text-gcw-muted">{c.detail}</p>
+                    {!c.passed && c.fixHint ? (
+                      <p className="mt-0.5 text-xs text-gcw-zinc">{c.fixHint}</p>
+                    ) : null}
+                  </li>
+                ))}
+              </ul>
+              {polish.score < 100 && polish.applyFeedback ? (
+                <form
+                  action={applyPolishFixesAction}
+                  className="mt-4 space-y-2 border-t border-gcw-line pt-4"
+                >
+                  <input type="hidden" name="assetId" value={asset.id} />
+                  <input type="hidden" name="clientId" value={clientId} />
+                  <input
+                    type="hidden"
+                    name="versionId"
+                    value={selectedVersion.id}
+                  />
+                  <input
+                    type="hidden"
+                    name="feedback"
+                    value={polish.applyFeedback}
+                  />
+                  <select
+                    name="provider"
+                    defaultValue="OpenAi"
+                    className="w-full rounded-lg border border-gcw-line px-3 py-2 text-sm"
+                  >
+                    <option value="OpenAi">OpenAI</option>
+                    <option value="Anthropic">Anthropic</option>
+                  </select>
+                  <button
+                    type="submit"
+                    className="rounded-pill bg-gcw-ink px-4 py-2 text-sm font-semibold text-white"
+                  >
+                    Apply polish fixes
+                  </button>
+                </form>
+              ) : null}
+            </div>
+          ) : null}
+
           <form
             action={reviseVersionAction}
             className="mt-10 space-y-3 rounded-2xl border border-gcw-line bg-white p-5"
@@ -623,6 +774,12 @@ export default async function AssetDetailPage({
                 name="assetVersionId"
                 value={selectedVersion.id}
               />
+              {polish && !polish.shipReady ? (
+                <p className="text-xs text-amber-800">
+                  Ship check blocked — clear critical polish issues before
+                  submit/approve.
+                </p>
+              ) : null}
               <select
                 name="action"
                 required
