@@ -31,12 +31,14 @@ export default async function AssetsPage({
     clientId?: string;
     campaignId?: string;
     repurposed?: string;
+    videoSeo?: string;
   }>;
 }) {
   const {
     clientId: filterClientId,
     campaignId: filterCampaignId,
     repurposed,
+    videoSeo,
   } = await searchParams;
 
   let clients: { id: string; name: string }[] = [];
@@ -92,6 +94,14 @@ export default async function AssetsPage({
           Created {repurposed} companion channel variant
           {repurposed === "1" ? "" : "s"} from the pillar. Open any companion
           below to edit.
+        </p>
+      ) : null}
+
+      {videoSeo ? (
+        <p className="mt-6 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
+          Created {videoSeo} video SEO companion
+          {videoSeo === "1" ? "" : "s"} (titles, description, tags, and more).
+          Open any below to edit.
         </p>
       ) : null}
 

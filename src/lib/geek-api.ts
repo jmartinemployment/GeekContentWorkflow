@@ -984,6 +984,20 @@ export function repurposeAssetVersion(
   );
 }
 
+/** Alias result shape — video SEO creates companion assets the same way. */
+export function generateVideoSeoPack(
+  versionId: string,
+  body?: { provider?: string; tone?: string },
+) {
+  return geekApiFetch<RepurposeResult>(
+    `/api/gcw/asset-versions/${versionId}/video-seo`,
+    {
+      method: "POST",
+      body: JSON.stringify(body ?? {}),
+    },
+  );
+}
+
 export type SeoCheck = {
   id: string;
   label: string;

@@ -18,6 +18,7 @@ import {
   resolveReviewComment,
   reviseAssetVersion,
   repurposeAssetVersion,
+  generateVideoSeoPack,
   updateAssetStatus,
   type ApprovalEvent,
   type ContentAssetVersion,
@@ -254,6 +255,42 @@ async function repurposeVersionAction(formData: FormData) {
       throw e;
     }
     const msg = e instanceof Error ? e.message : "Repurpose failed";
+    redirect(
+      `/app/assets/${assetId}?clientId=${clientId}&versionId=${versionId}&error=${encodeURIComponent(msg)}`,
+    );
+  }
+}
+
+async function videoSeoVersionAction(formData: FormData) {
+  "use server";
+  const assetId = String(formData.get("assetId") || "");
+  const clientId = String(formData.get("clientId") || "");
+  const versionId = String(formData.get("versionId") || "");
+  const campaignId = String(formData.get("campaignId") || "");
+  const provider = String(formData.get("provider") || "OpenAi").trim();
+  const tone = String(formData.get("tone") || "").trim();
+  if (!assetId || !versionId) return;
+
+  try {
+    const result = await generateVideoSeoPack(versionId, {
+      provider,
+      ...(tone ? { tone } : {}),
+    });
+    revalidatePath("/app/assets");
+    revalidatePath("/app/video-seo");
+    redirect(
+      `/app/assets?clientId=${clientId}&campaignId=${result.campaignId || campaignId}&videoSeo=${result.created.length}`,
+    );
+  } catch (e) {
+    if (
+      typeof e === "object" &&
+      e &&
+      "digest" in e &&
+      String((e as { digest?: string }).digest).startsWith("NEXT_REDIRECT")
+    ) {
+      throw e;
+    }
+    const msg = e instanceof Error ? e.message : "Video SEO pack failed";
     redirect(
       `/app/assets/${assetId}?clientId=${clientId}&versionId=${versionId}&error=${encodeURIComponent(msg)}`,
     );
@@ -726,6 +763,55 @@ export default async function AssetDetailPage({
                 className="rounded-pill bg-gcw-ink px-4 py-2 text-sm font-semibold text-white"
               >
                 Generate channel pack
+              </button>
+            </form>
+          ) : null}
+
+          {selectedVersion && asset.type === "pillar" ? (
+            <form
+              action={videoSeoVersionAction}
+              className="mt-10 space-y-3 rounded-2xl border border-gcw-line bg-white p-5"
+            >
+              <h2 className="font-heading text-lg font-medium">
+                Video SEO · v{selectedVersion.versionNumber}
+              </h2>
+              <p className="text-sm text-gcw-muted">
+                Generate a YouTube pack from this pillar: title options,
+                description, tags, chapters, thumbnail concepts, and Shorts
+                hooks — each saved as a companion asset.
+              </p>
+              <input type="hidden" name="assetId" value={asset.id} />
+              <input type="hidden" name="clientId" value={clientId} />
+              <input type="hidden" name="campaignId" value={asset.campaignId} />
+              <input
+                type="hidden"
+                name="versionId"
+                value={selectedVersion.id}
+              />
+              <select
+                name="tone"
+                defaultValue="professional"
+                className="w-full rounded-lg border border-gcw-line px-3 py-2 text-sm"
+              >
+                {tones.map((t) => (
+                  <option key={t.slug} value={t.slug}>
+                    {t.name} — {t.description}
+                  </option>
+                ))}
+              </select>
+              <select
+                name="provider"
+                defaultValue="OpenAi"
+                className="w-full rounded-lg border border-gcw-line px-3 py-2 text-sm"
+              >
+                <option value="OpenAi">OpenAI</option>
+                <option value="Anthropic">Anthropic</option>
+              </select>
+              <button
+                type="submit"
+                className="rounded-pill bg-gcw-ink px-4 py-2 text-sm font-semibold text-white"
+              >
+                Generate video SEO pack
               </button>
             </form>
           ) : null}
