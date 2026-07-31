@@ -450,3 +450,140 @@ export function createPainPoint(body: {
     body: JSON.stringify(body),
   });
 }
+
+// —— Research runs / sources / evidence ——
+
+export const RESEARCH_RUN_STATUSES = [
+  "queued",
+  "running",
+  "completed",
+  "failed",
+  "completed-with-partial-coverage",
+] as const;
+
+export const RESEARCH_SOURCE_TYPES = [
+  "ExistingInternal",
+  "OperatorUploaded",
+  "AgentDiscoveredExternal",
+] as const;
+
+export const EVIDENCE_SUPPORT_LEVELS = [
+  "VerifiedClientFact",
+  "VerifiedExternalSource",
+  "ObservedMarketLanguage",
+  "Unsupported",
+] as const;
+
+export type ResearchRun = {
+  id: string;
+  campaignId: string;
+  keyword: string;
+  status: string;
+  discoveredSourceCount: number;
+  spentBudget: number;
+  maxBudget: number;
+  errorMessage?: string | null;
+  createdAtUtc: string;
+  startedAtUtc?: string | null;
+  completedAtUtc?: string | null;
+};
+
+export type ResearchSource = {
+  id: string;
+  researchRunId: string;
+  sourceType: string;
+  url?: string | null;
+  title: string;
+  description?: string | null;
+  createdAtUtc: string;
+};
+
+export type ResearchEvidence = {
+  id: string;
+  researchSourceId: string;
+  statement: string;
+  supportLevel: string;
+  approvedForClaim: boolean;
+  confidence: number;
+  createdAtUtc: string;
+};
+
+export function listResearchRuns(campaignId: string) {
+  return geekApiFetch<ResearchRun[]>(
+    `/api/gcw/research-runs?campaignId=${encodeURIComponent(campaignId)}`,
+  );
+}
+
+export function getResearchRun(id: string) {
+  return geekApiFetch<ResearchRun>(`/api/gcw/research-runs/${id}`);
+}
+
+export function createResearchRun(body: {
+  campaignId: string;
+  keyword: string;
+  maxBudget?: number;
+}) {
+  return geekApiFetch<ResearchRun>("/api/gcw/research-runs", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
+
+export function updateResearchRunStatus(
+  id: string,
+  body: {
+    status: string;
+    discoveredSourceCount?: number;
+    spentBudget?: number;
+    errorMessage?: string | null;
+  },
+) {
+  return geekApiFetch<ResearchRun>(`/api/gcw/research-runs/${id}/status`, {
+    method: "PATCH",
+    body: JSON.stringify(body),
+  });
+}
+
+export function listResearchSources(researchRunId: string) {
+  return geekApiFetch<ResearchSource[]>(
+    `/api/gcw/research-sources?researchRunId=${encodeURIComponent(researchRunId)}`,
+  );
+}
+
+export function createResearchSource(body: {
+  researchRunId: string;
+  sourceType: string;
+  title: string;
+  url?: string | null;
+  description?: string | null;
+}) {
+  return geekApiFetch<ResearchSource>("/api/gcw/research-sources", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
+
+export function listResearchEvidence(sourceId: string) {
+  return geekApiFetch<ResearchEvidence[]>(
+    `/api/gcw/research-evidence?sourceId=${encodeURIComponent(sourceId)}`,
+  );
+}
+
+export function createResearchEvidence(body: {
+  researchSourceId: string;
+  statement: string;
+  supportLevel: string;
+  confidence?: number;
+}) {
+  return geekApiFetch<ResearchEvidence>("/api/gcw/research-evidence", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
+
+export function approveResearchEvidence(id: string) {
+  return geekApiFetch<ResearchEvidence>(
+    `/api/gcw/research-evidence/${id}/approve`,
+    { method: "PATCH" },
+  );
+}
