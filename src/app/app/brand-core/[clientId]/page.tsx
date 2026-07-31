@@ -8,10 +8,10 @@ import {
   createClientProfileVersion,
   GeekApiError,
   getClientProfileByClientId,
+  listAllClients,
   listBrandVoiceLinks,
   listBrandVoices,
   listClientProfileVersions,
-  listClients,
   type BrandVoice,
   type BrandVoiceLink,
   type ClientProfile,
@@ -146,7 +146,7 @@ export default async function BrandCoreClientPage({
   let error: string | null = queryError || null;
 
   try {
-    const clients = await listClients();
+    const clients = await listAllClients();
     const client = clients.find((c) => c.id === clientId);
     if (!client) notFound();
     clientName = client.name;

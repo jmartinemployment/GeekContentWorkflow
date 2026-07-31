@@ -132,6 +132,22 @@ export function createWorkspaceClient(body: {
   });
 }
 
+/** CWV2 drafting clients + CWV3 workspace clients (deduped by id). */
+export async function listAllClients(): Promise<{ id: string; name: string }[]> {
+  const drafting = await listClients().catch(() => [] as CwClient[]);
+  const workspaces = await listWorkspaces().catch(() => [] as Workspace[]);
+  const workspaceClients = (
+    await Promise.all(
+      workspaces.map((w) => listWorkspaceClients(w.id).catch(() => [] as GcwClient[])),
+    )
+  ).flat();
+
+  const byId = new Map<string, string>();
+  for (const c of drafting) byId.set(c.id, c.name);
+  for (const c of workspaceClients) byId.set(c.id, c.name);
+  return [...byId.entries()].map(([id, name]) => ({ id, name }));
+}
+
 // —— Projects (Strategy / content engine) ——
 
 export type ProjectSummary = {

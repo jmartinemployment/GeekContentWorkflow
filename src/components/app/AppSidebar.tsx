@@ -14,9 +14,11 @@ const nav = [
   { href: "/app/pain-points", label: "Pain Points" },
   { href: "/app/strategy-briefs", label: "Strategy Briefs" },
   { href: "/app/assets", label: "Assets" },
+  { href: "/app/reviews", label: "Reviews" },
   { href: "/app/publications", label: "Publications" },
   { href: "/app/drafting", label: "AI Drafting" },
   { href: "/app/analytics", label: "Analytics" },
+  { href: "/app/insights", label: "Insights" },
 ] as const;
 
 export function AppSidebar() {

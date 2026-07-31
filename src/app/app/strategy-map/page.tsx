@@ -6,8 +6,8 @@ import {
   createCampaign,
   createKeyword,
   KEYWORD_STATUSES,
+  listAllClients,
   listCampaigns,
-  listClients,
   listKeywords,
   updateCampaignStatus,
   updateKeywordStatus,
@@ -121,13 +121,13 @@ export default async function StrategyMapPage({
 }) {
   const { clientId: filterClientId } = await searchParams;
 
-  let clients: Awaited<ReturnType<typeof listClients>> = [];
+  let clients: { id: string; name: string }[] = [];
   let keywords: KeywordCandidate[] = [];
   let campaigns: GcwCampaign[] = [];
   let error: string | null = null;
 
   try {
-    clients = await listClients();
+    clients = await listAllClients();
     const clientId =
       filterClientId || (clients.length === 1 ? clients[0].id : "");
     if (clientId) {

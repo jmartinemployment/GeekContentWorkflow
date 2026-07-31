@@ -5,8 +5,8 @@ import {
   ASSET_TYPES,
   createAsset,
   listAssets,
+  listAllClients,
   listCampaigns,
-  listClients,
   type ContentAsset,
   type GcwCampaign,
 } from "@/lib/geek-api";
@@ -32,13 +32,13 @@ export default async function AssetsPage({
   const { clientId: filterClientId, campaignId: filterCampaignId } =
     await searchParams;
 
-  let clients: Awaited<ReturnType<typeof listClients>> = [];
+  let clients: { id: string; name: string }[] = [];
   let campaigns: GcwCampaign[] = [];
   let assets: ContentAsset[] = [];
   let error: string | null = null;
 
   try {
-    clients = await listClients();
+    clients = await listAllClients();
     const clientId =
       filterClientId || (clients.length === 1 ? clients[0].id : "");
     if (clientId) {
