@@ -173,6 +173,14 @@ export default async function ResearchRunDetailPage({
         Status: <span className="capitalize">{run.status}</span> · sources{" "}
         {run.discoveredSourceCount} · budget {run.spentBudget}/{run.maxBudget}
       </p>
+      <p className="mt-2">
+        <Link
+          href={`/app/reconciliation?clientId=${clientId}&campaignId=${run.campaignId}&researchRunId=${run.id}`}
+          className="text-sm font-medium text-gcw-ink underline-offset-2 hover:underline"
+        >
+          Reconciliation proposals →
+        </Link>
+      </p>
 
       {error ? (
         <p className="mt-4 text-sm text-amber-900">{error}</p>

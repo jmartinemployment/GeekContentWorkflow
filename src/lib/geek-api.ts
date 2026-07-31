@@ -587,3 +587,59 @@ export function approveResearchEvidence(id: string) {
     { method: "PATCH" },
   );
 }
+
+// —— Reconciliation proposals ——
+
+export const RECONCILIATION_PROPOSAL_TYPES = [
+  "new-pain-point",
+  "update-pain-point",
+  "new-evidence-link",
+] as const;
+
+export type ReconciliationProposal = {
+  id: string;
+  researchRunId: string;
+  proposalType: string;
+  painPointId?: string | null;
+  proposedData: Record<string, unknown>;
+  status: string;
+  reviewedByUserId?: string | null;
+  reviewedAtUtc?: string | null;
+  createdAtUtc: string;
+};
+
+export function listReconciliationProposals(researchRunId: string) {
+  return geekApiFetch<ReconciliationProposal[]>(
+    `/api/gcw/reconciliation?researchRunId=${encodeURIComponent(researchRunId)}`,
+  );
+}
+
+export function getReconciliationProposal(id: string) {
+  return geekApiFetch<ReconciliationProposal>(`/api/gcw/reconciliation/${id}`);
+}
+
+export function createReconciliationProposal(body: {
+  researchRunId: string;
+  proposalType: string;
+  proposedData?: Record<string, unknown>;
+  painPointId?: string | null;
+}) {
+  return geekApiFetch<ReconciliationProposal>("/api/gcw/reconciliation", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
+
+export function approveReconciliationProposal(id: string) {
+  return geekApiFetch<ReconciliationProposal>(
+    `/api/gcw/reconciliation/${id}/approve`,
+    { method: "PATCH" },
+  );
+}
+
+export function dismissReconciliationProposal(id: string) {
+  return geekApiFetch<ReconciliationProposal>(
+    `/api/gcw/reconciliation/${id}/dismiss`,
+    { method: "PATCH" },
+  );
+}

@@ -10,6 +10,7 @@ const nav = [
   { href: "/app/brand-core", label: "Brand Core" },
   { href: "/app/strategy-map", label: "Strategy Map" },
   { href: "/app/research", label: "Research" },
+  { href: "/app/reconciliation", label: "Reconciliation" },
   { href: "/app/pain-points", label: "Pain Points" },
   { href: "/app/strategy-briefs", label: "Strategy Briefs" },
   { href: "/app/drafting", label: "AI Drafting" },
