@@ -197,12 +197,16 @@ def main() -> int:
         shot(page, "04-created")
 
         print("4) approve")
-        page.locator('button:has-text("Approve")').first.click()
+        page.locator('li:has-text("Recon pain") button:has-text("Approve")').click()
         page.wait_for_load_state("networkidle")
-        page.wait_for_timeout(1200)
-        body = page.inner_text("body").lower()
-        if "approved" not in body:
-            print("FAIL approve", body[:600])
+        page.wait_for_timeout(2000)
+        shot(page, "04b-approved")
+        row = page.locator('li:has-text("Recon pain")')
+        if row.locator("text=/approved/i").count() == 0:
+            print("FAIL approve", row.inner_text() if row.count() else page.inner_text("body")[-800:])
+            return 1
+        if row.locator('button:has-text("Approve")').count():
+            print("FAIL approve button still present")
             return 1
 
         print("5) second proposal → dismiss")
@@ -212,16 +216,15 @@ def main() -> int:
         )
         page.click('button:has-text("Create proposal")')
         page.wait_for_load_state("networkidle")
-        page.wait_for_timeout(1200)
-        page.locator('button:has-text("Dismiss")').first.click()
+        page.wait_for_timeout(1500)
+        page.locator('li:has-text("Dismiss me") button:has-text("Dismiss")').click()
         page.wait_for_load_state("networkidle")
-        page.wait_for_timeout(1200)
-        body = page.inner_text("body").lower()
-        if "dismissed" not in body:
-            print("FAIL dismiss", body[:600])
-            return 1
-
+        page.wait_for_timeout(2000)
         shot(page, "05-done")
+        row2 = page.locator('li:has-text("Dismiss me")')
+        if row2.locator("text=/dismissed/i").count() == 0:
+            print("FAIL dismiss", row2.inner_text() if row2.count() else page.inner_text("body")[-800:])
+            return 1
         if forbidden:
             print("FAIL v3", forbidden)
             return 1
