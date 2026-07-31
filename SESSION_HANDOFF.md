@@ -38,8 +38,15 @@ All smoke-tested against production unless noted.
 | **Brand voice links (remaining P1 Brand)** | **Done 2026-07-31** | See brand voices section |
 | **Workspaces (tenant above clients)** | **Done 2026-07-31** | See workspaces section |
 | **Reviews queue + Insights** | **Done 2026-07-31** | `/app/reviews`, `/app/insights` |
+| **Horizon B: brand-grounded generate** | **Done 2026-07-31** | `POST /api/gcw/strategy-briefs/{id}/generate` |
 
-### Reviews + Insights (latest)
+### Brand-grounded generate (latest)
+
+**Backend — GeekBackend commit `892b7fd`:** GCW generate uses brief + evidence + profile facts/voice → ContentDocument asset version.
+
+**Frontend — GeekContentWorkflow commit `b324d24`:** Generate draft on strategy brief detail; smoke `scripts/smoke-generate-draft.py` → **PASS**.
+
+### Reviews + Insights (prior)
 
 **Frontend — GeekContentWorkflow commit `3938bef`:**
 
@@ -93,11 +100,16 @@ All smoke-tested against production unless noted.
 
 ## Next work
 
-**Near-term PLAN.md P0–P3 backlog is effectively complete** (including Reviews UI + Insights).
+**Horizon B drafting excellence** (partial): brand-grounded generate is live.
 
-Next horizon: [`LONG_TERM_PLAN.md`](./LONG_TERM_PLAN.md) (voice-constrained generation, SEO editor, repurpose, polish layer, etc.).
+Still open in Horizon B:
+- Iterative revise chat
+- Template library + tone controls
+- In-editor SEO optimization
+- Grammarly-class polish gate
+- Repurpose: pillar → social/ad variants
 
-User preference: when they say **continue**, pick the next clear item and implement without long planning debates.
+User preference: when they say **continue**, pick the next clear item and implement.
 
 ---
 
@@ -161,7 +173,7 @@ python3 scripts/smoke-brand-voices.py
 
 ```
 Continue Geek Content Workflow from SESSION_HANDOFF.md.
-Near-term PLAN P0–P3 is done (reviews + insights smoke PASS, commit 3938bef).
-Next: first actionable LONG_TERM_PLAN item via /api/gcw/* facades.
+Horizon B started: brand-grounded generate shipped (backend 892b7fd, frontend b324d24, smoke PASS).
+Next Horizon B item: iterative revise chat, templates/tone, SEO editor, polish gate, or repurpose.
 Never call /api/content-writer/v3/*.
 ```
