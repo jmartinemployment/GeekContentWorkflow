@@ -139,20 +139,39 @@ def main() -> int:
             f"Tpl WS {stamp}"
         )
         page.click('button:has-text("Create workspace")')
+        try:
+            page.wait_for_url(re.compile(r"workspaceId="), timeout=45000)
+        except PlaywrightTimeout:
+            shot(page, "no-workspace")
+            print("FAIL no workspaceId redirect")
+            print(page.inner_text("body")[:800])
+            return 1
         page.wait_for_load_state("networkidle")
-        page.wait_for_timeout(800)
-        page.locator('form:has(button:has-text("Create client")) input[name="name"]').first.fill(
-            f"Tpl Client {stamp}"
-        )
-        page.locator(
-            'form:has(button:has-text("Create client")) button:has-text("Create client")'
-        ).first.click()
+        page.wait_for_timeout(1000)
+        if page.locator("text=Clients in").count() == 0:
+            shot(page, "no-clients-section")
+            print("FAIL workspace clients section missing")
+            print(page.inner_text("body")[:800])
+            return 1
+
+        client_form = page.locator('form:has(button:has-text("Create client"))').first
+        client_form.locator('input[name="name"]').fill(f"Tpl Client {stamp}")
+        client_form.locator('button:has-text("Create client")').click()
         page.wait_for_load_state("networkidle")
-        page.wait_for_timeout(800)
-        href = page.locator("li", has_text=f"Tpl Client {stamp}").locator(
-            'a[href*="/app/brand-core/"]'
-        ).first.get_attribute("href")
+        page.wait_for_timeout(1500)
+        shot(page, "01-client")
+        row = page.locator("li", has_text=f"Tpl Client {stamp}").first
+        try:
+            row.wait_for(timeout=30000)
+        except PlaywrightTimeout:
+            print("FAIL client not listed")
+            print(page.inner_text("body")[:1200])
+            return 1
+        href = row.locator('a[href*="/app/brand-core/"]').first.get_attribute("href")
         client_id = (href or "").rstrip("/").split("/")[-1]
+        if not re.fullmatch(r"[0-9a-fA-F-]{36}", client_id or ""):
+            print("FAIL client id", client_id, href)
+            return 1
 
         page.goto(
             f"{APP}/app/strategy-briefs?clientId={client_id}",
