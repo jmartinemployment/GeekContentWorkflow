@@ -912,8 +912,9 @@ export default async function AssetDetailPage({
                 Generate visual · v{selectedVersion.versionNumber}
               </h2>
               <p className="text-sm text-gcw-muted">
-                Calls image-generator and saves a companion asset with the image
-                embedded — you land on the visual, not a JSON blob.
+                Builds headline + caption from the draft, generates a background
+                via image-generator, then burns readable title text onto the
+                image. You land on copy + image together.
               </p>
               <input type="hidden" name="assetId" value={asset.id} />
               <input type="hidden" name="clientId" value={clientId} />

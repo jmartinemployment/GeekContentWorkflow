@@ -228,7 +228,12 @@ def main() -> int:
         if not src.startswith("data:image"):
             print("FAIL image src not data URL", src[:80])
             return 1
-        print("   image rendered")
+        body = page.inner_text("body")
+        if "Headline" not in body or "Caption" not in body:
+            print("FAIL missing headline/caption text sections")
+            print(body[:1200])
+            return 1
+        print("   image + headline/caption text rendered")
 
         if forbidden:
             print("FAIL content-writer/v3 calls:", forbidden[:3])
