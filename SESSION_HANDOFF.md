@@ -35,9 +35,24 @@ All smoke-tested against production unless noted.
 | Reconciliation | Done | List filtered `pending` only → fixed in GeekRepository; required deploy |
 | Assets / draft versions / reviews / approvals | Done | |
 | Publications + analytics rollups | Done | |
-| **Brand voice links (remaining P1 Brand)** | **Done 2026-07-31** | See next section |
+| **Brand voice links (remaining P1 Brand)** | **Done 2026-07-31** | See brand voices section |
+| **Workspaces (tenant above clients)** | **Done 2026-07-31** | See workspaces section |
 
-### Brand voices (latest completed slice)
+### Workspaces (latest completed slice)
+
+**Backend — GeekBackend commit `6c80e3e`:**
+
+- `OwnerId` on Workspace + migration `AddWorkspaceOwnerId`
+- List by owner: `repo/content-writer-v3/workspaces?ownerId=`
+- GCW: `/api/gcw/workspaces`, `/api/gcw/clients` (workspace-scoped)
+
+**Frontend — GeekContentWorkflow commit `1ac1e74`:**
+
+- Brand Core rebuilt around workspaces + workspace clients
+- CWV2 drafting clients kept under a collapsed section
+- Smoke: `scripts/smoke-workspaces.py` → **PASS**
+
+### Brand voices (prior completed slice)
 
 **Backend — GeekBackend commit `5c084a1`:**
 
@@ -66,31 +81,15 @@ All smoke-tested against production unless noted.
 
 ---
 
-## Next work: Workspaces
+## Next work
 
-**Intent:** Tenant above clients. User preference: finish named PLAN groups; when they say **continue**, implement the next sequence item without long planning debates. Do not invent “P2a”-style partial labels.
+**P1 Brand / client intelligence is complete** (profiles, versions, brand voices, workspaces).
 
-### Verify on resume (backend starting points)
+Suggested next from PLAN / LONG_TERM:
 
-CWV3 already has workspace plumbing — confirm before coding:
+- Longer-horizon items in `LONG_TERM_PLAN.md`, or polish/migrate drafting clients fully onto workspaces if desired.
 
-- `IWorkspaceRepository` registered in `GeekRepository/ServiceRegistration.cs`
-- Entity / DTOs under ContentWriterV3 workspaces models
-- Repo HTTP routes for workspaces (if any)
-- Methods already on `HttpContentWriterV3Repository`
-- How `Client` relates to Workspace (likely `workspaceId` FK)
-- What `PLAN.md` / existing `HANDOFF.md` / `LONG_TERM_PLAN.md` say about Workspaces scope
-
-### Suggested ship slice (mirror brand-voice pattern)
-
-1. Investigate PLAN wording + existing Workspace repo/API surface.
-2. Add GeekAPI `/api/gcw/workspaces` (+ client attach/list-by-workspace if needed) — never expose v3 paths.
-3. Add typed helpers in `src/lib/geek-api.ts` + UI (top-level workspace list/picker and/or Brand Core).
-4. Smoke script under `scripts/smoke-*.py`; deploy GeekRepository / GeekAPI / Vercel as needed.
-
-### Still deferred after Workspaces
-
-- Longer-horizon items in `LONG_TERM_PLAN.md`.
+User preference: when they say **continue**, pick the next clear PLAN/LONG_TERM item and implement without long planning debates.
 
 ---
 
@@ -153,9 +152,9 @@ python3 scripts/smoke-brand-voices.py
 ## Resume prompt (paste to next agent)
 
 ```
-Continue Geek Content Workflow from SESSION_HANDOFF.md (or HANDOFF.md if merged).
-Next: implement Workspaces (tenant above clients) via /api/gcw/* facades —
-investigate existing CWV3 Workspace repo/API + Client FK, add GCW facade + UI + smoke,
-deploy GeekRepository/GeekAPI/Vercel as needed. Never call /api/content-writer/v3/*.
-Brand voices already shipped (backend 5c084a1, frontend 5df7880, smoke PASS).
+Continue Geek Content Workflow from SESSION_HANDOFF.md.
+P1 Brand is done (profiles, voices, workspaces — smoke PASS).
+Next: pick the next PLAN / LONG_TERM_PLAN item and implement via /api/gcw/* facades.
+Never call /api/content-writer/v3/*.
+Latest: backend 6c80e3e, frontend 1ac1e74.
 ```
