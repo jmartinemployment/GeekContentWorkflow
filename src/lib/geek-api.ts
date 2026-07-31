@@ -998,6 +998,31 @@ export function generateVideoSeoPack(
   );
 }
 
+export function generateAssetVisual(
+  versionId: string,
+  body?: {
+    useCase?: string;
+    provider?: string;
+    direction?: string;
+  },
+) {
+  return geekApiFetch<RepurposeResult>(
+    `/api/gcw/asset-versions/${versionId}/visuals`,
+    {
+      method: "POST",
+      body: JSON.stringify(body ?? {}),
+    },
+  );
+}
+
+export const VISUAL_USE_CASES = [
+  { slug: "pillar-figure", name: "Pillar figure" },
+  { slug: "social-linkedin", name: "LinkedIn / social" },
+  { slug: "social-facebook", name: "Facebook / OG social" },
+  { slug: "youtube-thumbnail", name: "YouTube thumbnail" },
+  { slug: "og-image", name: "OG image" },
+] as const;
+
 export type SeoCheck = {
   id: string;
   label: string;

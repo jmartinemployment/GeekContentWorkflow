@@ -33,6 +33,31 @@ function Runs({
 }
 
 function Paragraph({ p }: { p: ContentParagraph }) {
+  if (p.$type === "image") {
+    const src =
+      p.src ||
+      (p.bytesBase64
+        ? `data:${p.contentType || "image/webp"};base64,${p.bytesBase64}`
+        : "");
+    if (!src) return null;
+    return (
+      <figure className="space-y-2">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={src}
+          alt={p.alt || "Generated visual"}
+          className="max-h-[480px] w-full rounded-xl border border-gcw-line object-contain bg-[#fafafa]"
+        />
+        <a
+          href={src}
+          download={`gcw-visual.${(p.contentType || "image/webp").includes("avif") ? "avif" : "webp"}`}
+          className="inline-block text-xs font-medium text-gcw-zinc underline hover:text-gcw-ink"
+        >
+          Download image
+        </a>
+      </figure>
+    );
+  }
   if (p.$type === "text") {
     return (
       <p className="text-[15px] leading-relaxed text-gcw-ink">
@@ -103,7 +128,13 @@ export function ContentDocumentPreview({
 
   const plain = flattenDocumentText(doc);
   const hasContent =
-    Boolean(doc.lede?.trim()) || (doc.sections && doc.sections.length > 0);
+    Boolean(doc.lede?.trim()) ||
+    (doc.sections ?? []).some(
+      (s) =>
+        Boolean(s.heading?.trim()) ||
+        (s.paragraphs ?? []).length > 0 ||
+        (s.children ?? []).length > 0,
+    );
 
   if (!hasContent) {
     return (

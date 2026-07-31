@@ -11,6 +11,13 @@ export type ContentParagraph =
       $type: "list";
       ordered?: boolean;
       items?: ContentRun[][] | string[];
+    }
+  | {
+      $type: "image";
+      alt?: string;
+      contentType?: string;
+      src?: string;
+      bytesBase64?: string;
     };
 
 export type ContentSection = {

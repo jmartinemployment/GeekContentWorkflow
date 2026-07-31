@@ -20,7 +20,9 @@ import {
   reviseAssetVersion,
   repurposeAssetVersion,
   generateVideoSeoPack,
+  generateAssetVisual,
   updateAssetStatus,
+  VISUAL_USE_CASES,
   type ApprovalEvent,
   type ContentAssetVersion,
   type PolishReport,
@@ -310,6 +312,47 @@ async function videoSeoVersionAction(formData: FormData) {
   }
 }
 
+async function generateVisualAction(formData: FormData) {
+  "use server";
+  const assetId = String(formData.get("assetId") || "");
+  const clientId = String(formData.get("clientId") || "");
+  const versionId = String(formData.get("versionId") || "");
+  const useCase = String(formData.get("useCase") || "social-linkedin").trim();
+  const provider = String(formData.get("provider") || "openai").trim();
+  const direction = String(formData.get("direction") || "").trim();
+  if (!assetId || !versionId) return;
+
+  try {
+    const result = await generateAssetVisual(versionId, {
+      useCase,
+      provider,
+      ...(direction ? { direction } : {}),
+    });
+    revalidatePath("/app/assets");
+    revalidatePath("/app/media");
+    const first = result.created[0];
+    if (first) {
+      redirect(
+        `/app/assets/${first.assetId}?clientId=${clientId}&versionId=${first.versionId}&packCreated=1&packKind=visual`,
+      );
+    }
+    redirect(`/app/assets/${assetId}?clientId=${clientId}&versionId=${versionId}`);
+  } catch (e) {
+    if (
+      typeof e === "object" &&
+      e &&
+      "digest" in e &&
+      String((e as { digest?: string }).digest).startsWith("NEXT_REDIRECT")
+    ) {
+      throw e;
+    }
+    const msg = e instanceof Error ? e.message : "Visual generation failed";
+    redirect(
+      `/app/assets/${assetId}?clientId=${clientId}&versionId=${versionId}&error=${encodeURIComponent(msg)}`,
+    );
+  }
+}
+
 async function createApprovalAction(formData: FormData) {
   "use server";
   const assetId = String(formData.get("assetId") || "");
@@ -469,9 +512,11 @@ export default async function AssetDetailPage({
 
       {packCreated ? (
         <p className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
-          Pack ready — showing the first of {packCreated}{" "}
-          {packKind === "video" ? "video SEO" : "channel"} companions. Scroll
-          the draft below to copy titles, tags, or copy.{" "}
+          {packKind === "visual"
+            ? "Visual ready — image is in the draft preview below (download link under it)."
+            : `Pack ready — showing the first of ${packCreated} ${
+                packKind === "video" ? "video SEO" : "channel"
+              } companions. Scroll the draft below to copy titles, tags, or copy.`}{" "}
           <Link
             href={`/app/assets?clientId=${clientId}&campaignId=${asset.campaignId}`}
             className="underline"
@@ -854,6 +899,59 @@ export default async function AssetDetailPage({
                 className="rounded-pill bg-gcw-ink px-4 py-2 text-sm font-semibold text-white"
               >
                 Generate video SEO pack
+              </button>
+            </form>
+          ) : null}
+
+          {selectedVersion ? (
+            <form
+              action={generateVisualAction}
+              className="mt-10 space-y-3 rounded-2xl border border-gcw-line bg-white p-5"
+            >
+              <h2 className="font-heading text-lg font-medium">
+                Generate visual · v{selectedVersion.versionNumber}
+              </h2>
+              <p className="text-sm text-gcw-muted">
+                Calls image-generator and saves a companion asset with the image
+                embedded — you land on the visual, not a JSON blob.
+              </p>
+              <input type="hidden" name="assetId" value={asset.id} />
+              <input type="hidden" name="clientId" value={clientId} />
+              <input
+                type="hidden"
+                name="versionId"
+                value={selectedVersion.id}
+              />
+              <select
+                name="useCase"
+                defaultValue="social-linkedin"
+                className="w-full rounded-lg border border-gcw-line px-3 py-2 text-sm"
+              >
+                {VISUAL_USE_CASES.map((u) => (
+                  <option key={u.slug} value={u.slug}>
+                    {u.name}
+                  </option>
+                ))}
+              </select>
+              <select
+                name="provider"
+                defaultValue="openai"
+                className="w-full rounded-lg border border-gcw-line px-3 py-2 text-sm"
+              >
+                <option value="openai">OpenAI</option>
+                <option value="google-imagen">Google Imagen</option>
+                <option value="ideogram">Ideogram</option>
+              </select>
+              <input
+                name="direction"
+                placeholder="Optional creative direction (colors, metaphor…)"
+                className="w-full rounded-lg border border-gcw-line px-3 py-2 text-sm"
+              />
+              <button
+                type="submit"
+                className="rounded-pill bg-gcw-ink px-4 py-2 text-sm font-semibold text-white"
+              >
+                Generate visual
               </button>
             </form>
           ) : null}
