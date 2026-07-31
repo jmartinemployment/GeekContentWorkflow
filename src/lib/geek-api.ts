@@ -952,6 +952,38 @@ export function reviseAssetVersion(
   );
 }
 
+export type RepurposeCreatedItem = {
+  assetId: string;
+  versionId: string;
+  name: string;
+  channel: string;
+  preview: string;
+};
+
+export type RepurposeResult = {
+  sourceAssetId: string;
+  sourceVersionId: string;
+  campaignId: string;
+  created: RepurposeCreatedItem[];
+};
+
+export function repurposeAssetVersion(
+  versionId: string,
+  body?: {
+    provider?: string;
+    tone?: string;
+    channels?: string[];
+  },
+) {
+  return geekApiFetch<RepurposeResult>(
+    `/api/gcw/asset-versions/${versionId}/repurpose`,
+    {
+      method: "POST",
+      body: JSON.stringify(body ?? {}),
+    },
+  );
+}
+
 export type SeoCheck = {
   id: string;
   label: string;

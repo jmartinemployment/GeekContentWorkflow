@@ -27,10 +27,17 @@ async function createAssetAction(formData: FormData) {
 export default async function AssetsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ clientId?: string; campaignId?: string }>;
+  searchParams: Promise<{
+    clientId?: string;
+    campaignId?: string;
+    repurposed?: string;
+  }>;
 }) {
-  const { clientId: filterClientId, campaignId: filterCampaignId } =
-    await searchParams;
+  const {
+    clientId: filterClientId,
+    campaignId: filterCampaignId,
+    repurposed,
+  } = await searchParams;
 
   let clients: { id: string; name: string }[] = [];
   let campaigns: GcwCampaign[] = [];
@@ -77,6 +84,14 @@ export default async function AssetsPage({
       {error ? (
         <p className="mt-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
           {error}
+        </p>
+      ) : null}
+
+      {repurposed ? (
+        <p className="mt-6 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
+          Created {repurposed} companion channel variant
+          {repurposed === "1" ? "" : "s"} from the pillar. Open any companion
+          below to edit.
         </p>
       ) : null}
 

@@ -17,6 +17,7 @@ import {
   getAssetVersionPolish,
   resolveReviewComment,
   reviseAssetVersion,
+  repurposeAssetVersion,
   updateAssetStatus,
   type ApprovalEvent,
   type ContentAssetVersion,
@@ -212,6 +213,47 @@ async function applyPolishFixesAction(formData: FormData) {
       throw e;
     }
     const msg = e instanceof Error ? e.message : "Polish apply failed";
+    redirect(
+      `/app/assets/${assetId}?clientId=${clientId}&versionId=${versionId}&error=${encodeURIComponent(msg)}`,
+    );
+  }
+}
+
+async function repurposeVersionAction(formData: FormData) {
+  "use server";
+  const assetId = String(formData.get("assetId") || "");
+  const clientId = String(formData.get("clientId") || "");
+  const versionId = String(formData.get("versionId") || "");
+  const campaignId = String(formData.get("campaignId") || "");
+  const provider = String(formData.get("provider") || "OpenAi").trim();
+  const tone = String(formData.get("tone") || "").trim();
+  const channels = formData
+    .getAll("channels")
+    .map((v) => String(v).trim())
+    .filter(Boolean);
+  if (!assetId || !versionId) return;
+
+  try {
+    const result = await repurposeAssetVersion(versionId, {
+      provider,
+      ...(tone ? { tone } : {}),
+      ...(channels.length ? { channels } : {}),
+    });
+    revalidatePath("/app/assets");
+    revalidatePath("/app/repurpose");
+    redirect(
+      `/app/assets?clientId=${clientId}&campaignId=${result.campaignId || campaignId}&repurposed=${result.created.length}`,
+    );
+  } catch (e) {
+    if (
+      typeof e === "object" &&
+      e &&
+      "digest" in e &&
+      String((e as { digest?: string }).digest).startsWith("NEXT_REDIRECT")
+    ) {
+      throw e;
+    }
+    const msg = e instanceof Error ? e.message : "Repurpose failed";
     redirect(
       `/app/assets/${assetId}?clientId=${clientId}&versionId=${versionId}&error=${encodeURIComponent(msg)}`,
     );
@@ -617,6 +659,75 @@ export default async function AssetDetailPage({
                 </form>
               ) : null}
             </div>
+          ) : null}
+
+          {selectedVersion && asset.type === "pillar" ? (
+            <form
+              action={repurposeVersionAction}
+              className="mt-10 space-y-3 rounded-2xl border border-gcw-line bg-white p-5"
+            >
+              <h2 className="font-heading text-lg font-medium">
+                Repurpose · v{selectedVersion.versionNumber}
+              </h2>
+              <p className="text-sm text-gcw-muted">
+                Generate a multi-channel pack from this pillar: LinkedIn, X,
+                Instagram, Meta ads, Google ads, and email — each saved as a
+                companion asset on the same campaign.
+              </p>
+              <input type="hidden" name="assetId" value={asset.id} />
+              <input type="hidden" name="clientId" value={clientId} />
+              <input type="hidden" name="campaignId" value={asset.campaignId} />
+              <input
+                type="hidden"
+                name="versionId"
+                value={selectedVersion.id}
+              />
+              <fieldset className="space-y-2">
+                <legend className="text-xs font-medium text-gcw-zinc">
+                  Channels (default pack if none selected)
+                </legend>
+                <div className="flex flex-wrap gap-3 text-sm">
+                  {[
+                    ["linkedin", "LinkedIn ×3"],
+                    ["x", "X ×3"],
+                    ["instagram", "Instagram ×2"],
+                    ["meta_ad", "Meta ads ×2"],
+                    ["google_ad", "Google ad ×1"],
+                    ["email", "Email ×1"],
+                  ].map(([value, label]) => (
+                    <label key={value} className="flex items-center gap-1.5">
+                      <input type="checkbox" name="channels" value={value} />
+                      {label}
+                    </label>
+                  ))}
+                </div>
+              </fieldset>
+              <select
+                name="tone"
+                defaultValue="professional"
+                className="w-full rounded-lg border border-gcw-line px-3 py-2 text-sm"
+              >
+                {tones.map((t) => (
+                  <option key={t.slug} value={t.slug}>
+                    {t.name} — {t.description}
+                  </option>
+                ))}
+              </select>
+              <select
+                name="provider"
+                defaultValue="OpenAi"
+                className="w-full rounded-lg border border-gcw-line px-3 py-2 text-sm"
+              >
+                <option value="OpenAi">OpenAI</option>
+                <option value="Anthropic">Anthropic</option>
+              </select>
+              <button
+                type="submit"
+                className="rounded-pill bg-gcw-ink px-4 py-2 text-sm font-semibold text-white"
+              >
+                Generate channel pack
+              </button>
+            </form>
           ) : null}
 
           <form
