@@ -76,6 +76,62 @@ export function createClient(body: { name: string; notes?: string | null }) {
   });
 }
 
+// —— Workspaces + CWV3 clients (GCW facade; tenant above clients) ——
+
+export type Workspace = {
+  id: string;
+  ownerId: string;
+  name: string;
+  createdAtUtc: string;
+  updatedAtUtc: string;
+};
+
+export type GcwClient = {
+  id: string;
+  workspaceId: string;
+  name: string;
+  createdAtUtc: string;
+  updatedAtUtc: string;
+};
+
+export function listWorkspaces() {
+  return geekApiFetch<Workspace[]>("/api/gcw/workspaces");
+}
+
+export function getWorkspace(id: string) {
+  return geekApiFetch<Workspace>(`/api/gcw/workspaces/${id}`);
+}
+
+export function createWorkspace(body: { name: string }) {
+  return geekApiFetch<Workspace>("/api/gcw/workspaces", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
+
+export function updateWorkspace(id: string, body: { name: string }) {
+  return geekApiFetch<Workspace>(`/api/gcw/workspaces/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(body),
+  });
+}
+
+export function listWorkspaceClients(workspaceId: string) {
+  return geekApiFetch<GcwClient[]>(
+    `/api/gcw/clients?workspaceId=${encodeURIComponent(workspaceId)}`,
+  );
+}
+
+export function createWorkspaceClient(body: {
+  workspaceId: string;
+  name: string;
+}) {
+  return geekApiFetch<GcwClient>("/api/gcw/clients", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
+
 // —— Projects (Strategy / content engine) ——
 
 export type ProjectSummary = {
