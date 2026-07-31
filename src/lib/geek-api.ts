@@ -643,3 +643,153 @@ export function dismissReconciliationProposal(id: string) {
     { method: "PATCH" },
   );
 }
+
+// —— Assets / drafts / reviews ——
+
+export const ASSET_TYPES = ["pillar", "companion"] as const;
+export const ASSET_STATUSES = [
+  "draft",
+  "readyForApproval",
+  "approved",
+  "published",
+] as const;
+export const APPROVAL_ACTIONS = [
+  "submitted",
+  "approved",
+  "rejected",
+  "changes-requested",
+] as const;
+
+export type ContentAsset = {
+  id: string;
+  campaignId: string;
+  type: string;
+  name: string;
+  status: string;
+  createdAtUtc: string;
+  updatedAtUtc: string;
+};
+
+export type ContentAssetVersion = {
+  id: string;
+  assetId: string;
+  versionNumber: number;
+  bodyDocumentJson: string;
+  rowVersion: number;
+  createdAtUtc: string;
+};
+
+export type ReviewComment = {
+  id: string;
+  assetVersionId: string;
+  userId: string;
+  sectionPath?: string | null;
+  content: string;
+  resolution?: string | null;
+  createdAtUtc: string;
+};
+
+export type ApprovalEvent = {
+  id: string;
+  assetVersionId: string;
+  userId: string;
+  action: string;
+  notes?: string | null;
+  createdAtUtc: string;
+};
+
+export function listAssets(campaignId: string) {
+  return geekApiFetch<ContentAsset[]>(
+    `/api/gcw/assets?campaignId=${encodeURIComponent(campaignId)}`,
+  );
+}
+
+export function getAsset(id: string) {
+  return geekApiFetch<ContentAsset>(`/api/gcw/assets/${id}`);
+}
+
+export function createAsset(body: {
+  campaignId: string;
+  type: string;
+  name: string;
+}) {
+  return geekApiFetch<ContentAsset>("/api/gcw/assets", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
+
+export function updateAssetStatus(id: string, status: string) {
+  return geekApiFetch<ContentAsset>(`/api/gcw/assets/${id}/status`, {
+    method: "PATCH",
+    body: JSON.stringify({ status }),
+  });
+}
+
+export function listAssetVersions(assetId: string) {
+  return geekApiFetch<ContentAssetVersion[]>(
+    `/api/gcw/asset-versions?assetId=${encodeURIComponent(assetId)}`,
+  );
+}
+
+export function getAssetVersion(id: string) {
+  return geekApiFetch<ContentAssetVersion>(`/api/gcw/asset-versions/${id}`);
+}
+
+export function createAssetVersion(body: {
+  assetId: string;
+  bodyDocumentJson: string;
+}) {
+  return geekApiFetch<ContentAssetVersion>("/api/gcw/asset-versions", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
+
+export function updateAssetVersion(id: string, bodyDocumentJson: string) {
+  return geekApiFetch<ContentAssetVersion>(`/api/gcw/asset-versions/${id}`, {
+    method: "PUT",
+    body: JSON.stringify({ bodyDocumentJson }),
+  });
+}
+
+export function listReviewComments(assetVersionId: string) {
+  return geekApiFetch<ReviewComment[]>(
+    `/api/gcw/review-comments?assetVersionId=${encodeURIComponent(assetVersionId)}`,
+  );
+}
+
+export function createReviewComment(body: {
+  assetVersionId: string;
+  content: string;
+  sectionPath?: string | null;
+}) {
+  return geekApiFetch<ReviewComment>("/api/gcw/review-comments", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
+
+export function resolveReviewComment(id: string, resolution: string) {
+  return geekApiFetch<ReviewComment>(`/api/gcw/review-comments/${id}/resolve`, {
+    method: "PATCH",
+    body: JSON.stringify({ resolution }),
+  });
+}
+
+export function listApprovalEvents(assetVersionId: string) {
+  return geekApiFetch<ApprovalEvent[]>(
+    `/api/gcw/approval-events?assetVersionId=${encodeURIComponent(assetVersionId)}`,
+  );
+}
+
+export function createApprovalEvent(body: {
+  assetVersionId: string;
+  action: string;
+  notes?: string | null;
+}) {
+  return geekApiFetch<ApprovalEvent>("/api/gcw/approval-events", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
