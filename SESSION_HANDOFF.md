@@ -39,8 +39,15 @@ All smoke-tested against production unless noted.
 | **Workspaces (tenant above clients)** | **Done 2026-07-31** | See workspaces section |
 | **Reviews queue + Insights** | **Done 2026-07-31** | `/app/reviews`, `/app/insights` |
 | **Horizon B: brand-grounded generate** | **Done 2026-07-31** | `POST /api/gcw/strategy-briefs/{id}/generate` |
+| **Horizon B: iterative revise chat** | **Done 2026-07-31** | `POST /api/gcw/asset-versions/{id}/revise` |
 
-### Brand-grounded generate (latest)
+### Iterative revise (latest)
+
+**Backend `cafc320`:** `ReviseStructuredDraftAsync` on OpenAI/Claude + GCW revise endpoint.
+
+**Frontend `532a80e`:** Revise chat on asset page; smoke `scripts/smoke-revise.py` → **PASS**.
+
+### Brand-grounded generate (prior)
 
 **Backend — GeekBackend commit `892b7fd`:** GCW generate uses brief + evidence + profile facts/voice → ContentDocument asset version.
 
@@ -100,10 +107,9 @@ All smoke-tested against production unless noted.
 
 ## Next work
 
-**Horizon B drafting excellence** (partial): brand-grounded generate is live.
+**Horizon B drafting excellence** (partial): generate + revise chat are live.
 
 Still open in Horizon B:
-- Iterative revise chat
 - Template library + tone controls
 - In-editor SEO optimization
 - Grammarly-class polish gate
@@ -173,7 +179,7 @@ python3 scripts/smoke-brand-voices.py
 
 ```
 Continue Geek Content Workflow from SESSION_HANDOFF.md.
-Horizon B started: brand-grounded generate shipped (backend 892b7fd, frontend b324d24, smoke PASS).
-Next Horizon B item: iterative revise chat, templates/tone, SEO editor, polish gate, or repurpose.
+Horizon B: generate + revise shipped (backend cafc320, frontend 532a80e, smokes PASS).
+Next: templates/tone, SEO editor, polish gate, or repurpose.
 Never call /api/content-writer/v3/*.
 ```
