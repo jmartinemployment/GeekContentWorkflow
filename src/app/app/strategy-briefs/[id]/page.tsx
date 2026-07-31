@@ -4,10 +4,13 @@ import {
   BUYING_STAGES,
   approveStrategyBrief,
   getCampaign,
+  getPainPoint,
   getStrategyBrief,
   rejectStrategyBrief,
   updateStrategyBrief,
 } from "@/lib/geek-api";
+
+const EMPTY_GUID = "00000000-0000-0000-0000-000000000000";
 
 async function updateBriefAction(formData: FormData) {
   "use server";
@@ -53,6 +56,7 @@ export default async function StrategyBriefDetailPage({
   const { id } = await params;
   let brief: Awaited<ReturnType<typeof getStrategyBrief>> | null = null;
   let campaignName: string | null = null;
+  let painPointName: string | null = null;
   let error: string | null = null;
 
   try {
@@ -62,6 +66,14 @@ export default async function StrategyBriefDetailPage({
       campaignName = campaign.name;
     } catch {
       campaignName = null;
+    }
+    if (brief.painPointId && brief.painPointId !== EMPTY_GUID) {
+      try {
+        const pp = await getPainPoint(brief.painPointId);
+        painPointName = pp.name;
+      } catch {
+        painPointName = null;
+      }
     }
   } catch (e) {
     error = e instanceof Error ? e.message : "Failed to load brief";
@@ -95,6 +107,16 @@ export default async function StrategyBriefDetailPage({
           <p className="mt-2 text-sm text-gcw-muted">
             {campaignName ? `${campaignName} · ` : null}
             Status: <span className="capitalize">{brief.status}</span>
+          </p>
+          <p className="mt-1 text-sm text-gcw-muted">
+            Pain point:{" "}
+            {painPointName ? (
+              <span className="text-gcw-ink">{painPointName}</span>
+            ) : brief.painPointId && brief.painPointId !== EMPTY_GUID ? (
+              <code className="text-xs">{brief.painPointId}</code>
+            ) : (
+              <span className="text-gcw-zinc">None linked</span>
+            )}
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -181,11 +203,6 @@ export default async function StrategyBriefDetailPage({
           Save changes
         </button>
       </form>
-
-      <p className="mt-6 text-xs text-gcw-zinc">
-        Pain-point linking ships with research (P2). Draft generation from briefs is
-        out of this slice.
-      </p>
     </div>
   );
 }
