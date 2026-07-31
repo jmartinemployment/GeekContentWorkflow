@@ -39,3 +39,8 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# local planning / handoff (keep out of the repo)
+PLAN.md
+LONG_TERM_PLAN.md
+HANDOFF.md

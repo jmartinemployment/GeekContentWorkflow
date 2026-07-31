@@ -1,36 +1,57 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# GeekContentWorkflow
 
-## Getting Started
+AI content marketing workflow for Geek — strategy, research, drafting, publishing, and performance — built on GeekOAuth and GeekAPI (Content Writer v2).
 
-First, run the development server:
+## Product scope
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+1. **Strategy & planning** — brand / client context and content projects  
+2. **Ideation & research** — site crawl and topic signals  
+3. **Content creation & editing** — generate pillar and blog drafts  
+4. **Scheduling & publishing** — publish via CWV2 HTML commit path  
+5. **Performance & tracking** — project status rollup (analytics deepen later)
+
+Marketing site plus authenticated `/app` shell. Display name: **Geek Content Workflow**.
+
+## Stack
+
+```
+Next.js (this app)
+  → GeekOAuth          auth (OIDC + PKCE)
+  → GeekAPI            Content Writer v2
+       → GeekRepository → Supabase
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+This app never calls GeekRepository or the database directly. Do not use Content Writer v3.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Environment
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Set on the deploy host (Vercel). See `.env.example`.
 
-## Learn More
+| Variable | Purpose |
+|----------|---------|
+| `NEXT_PUBLIC_APP_URL` | Public app URL |
+| `NEXT_PUBLIC_AUTH_URL` | GeekOAuth base (`https://auth.geekatyourspot.com`) |
+| `NEXT_PUBLIC_GEEK_API_URL` | GeekAPI base (`https://api.geekatyourspot.com`) |
+| `NEXT_PUBLIC_OAUTH_CLIENT_ID` | Default: `geek-content-workflow` |
+| `NEXT_PUBLIC_OAUTH_REDIRECT_URI` | `{APP_URL}/auth/callback` |
 
-To learn more about Next.js, take a look at the following resources:
+Register the OAuth client in GeekOAuth and add the app origin to GeekAPI `CORS_ORIGINS`.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Scripts
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+npm install
+npm run build
+npm start
+```
 
-## Deploy on Vercel
+## Docs
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- [`PLAN.md`](./PLAN.md) — **near-term feature pickup** (strategy briefs, research, campaigns, reviews, …)  
+- [`LONG_TERM_PLAN.md`](./LONG_TERM_PLAN.md) — **long-term competitive intake** (Claude, ChatGPT, Jasper, Copy.ai, Grammarly, Surfer, VidIQ, Canva, Premiere, Zapier/Make/n8n, HubSpot, Metricool)  
+- [`HANDOFF.md`](./HANDOFF.md) — architecture, constraints, deploy checklist  
+- [`docs/research/`](./docs/research/) — marketing-page research notes  
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## License
+
+Private — Geek At Your Spot.
