@@ -355,6 +355,77 @@ export function createClientProfileVersion(body: {
   });
 }
 
+// —— Brand voices + profile-version links (GCW facade) ——
+
+export type BrandVoice = {
+  id: string;
+  ownerId: string;
+  name: string;
+  description: string;
+  tone: string;
+  sampleText: string;
+  createdAtUtc: string;
+  updatedAtUtc: string;
+};
+
+export type BrandVoiceLink = {
+  id: string;
+  profileVersionId: string;
+  brandVoiceId: string;
+  createdAtUtc: string;
+};
+
+export function listBrandVoices() {
+  return geekApiFetch<BrandVoice[]>("/api/gcw/brand-voices");
+}
+
+export function getBrandVoice(id: string) {
+  return geekApiFetch<BrandVoice>(`/api/gcw/brand-voices/${id}`);
+}
+
+export function createBrandVoice(body: {
+  name: string;
+  description?: string;
+  tone: string;
+  sampleText?: string;
+}) {
+  return geekApiFetch<BrandVoice>("/api/gcw/brand-voices", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
+
+export function updateBrandVoice(
+  id: string,
+  body: {
+    name: string;
+    description?: string;
+    tone: string;
+    sampleText?: string;
+  },
+) {
+  return geekApiFetch<BrandVoice>(`/api/gcw/brand-voices/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(body),
+  });
+}
+
+export function listBrandVoiceLinks(profileVersionId: string) {
+  return geekApiFetch<BrandVoiceLink[]>(
+    `/api/gcw/brand-voice-links?profileVersionId=${encodeURIComponent(profileVersionId)}`,
+  );
+}
+
+export function createBrandVoiceLink(body: {
+  profileVersionId: string;
+  brandVoiceId: string;
+}) {
+  return geekApiFetch<BrandVoiceLink>("/api/gcw/brand-voice-links", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
+
 // —— Keyword candidates (GCW facade over Repository) ——
 
 export const KEYWORD_STATUSES = [

@@ -2,12 +2,18 @@ import Link from "next/link";
 import { revalidatePath } from "next/cache";
 import { notFound, redirect } from "next/navigation";
 import {
+  createBrandVoice,
+  createBrandVoiceLink,
   createClientProfile,
   createClientProfileVersion,
   GeekApiError,
   getClientProfileByClientId,
+  listBrandVoiceLinks,
+  listBrandVoices,
   listClientProfileVersions,
   listClients,
+  type BrandVoice,
+  type BrandVoiceLink,
   type ClientProfile,
   type ClientProfileVersion,
 } from "@/lib/geek-api";
@@ -86,6 +92,42 @@ async function createVersionAction(formData: FormData) {
   redirect(`/app/brand-core/${clientId}`);
 }
 
+async function createAndLinkVoiceAction(formData: FormData) {
+  "use server";
+  const clientId = String(formData.get("clientId") || "");
+  const profileVersionId = String(formData.get("profileVersionId") || "");
+  const name = String(formData.get("name") || "").trim();
+  const tone = String(formData.get("tone") || "").trim();
+  const description = String(formData.get("description") || "").trim();
+  const sampleText = String(formData.get("sampleText") || "").trim();
+  if (!clientId || !profileVersionId || !name || !tone) return;
+
+  const voice = await createBrandVoice({
+    name,
+    tone,
+    description,
+    sampleText,
+  });
+  await createBrandVoiceLink({
+    profileVersionId,
+    brandVoiceId: voice.id,
+  });
+  revalidatePath(`/app/brand-core/${clientId}`);
+  redirect(`/app/brand-core/${clientId}`);
+}
+
+async function linkExistingVoiceAction(formData: FormData) {
+  "use server";
+  const clientId = String(formData.get("clientId") || "");
+  const profileVersionId = String(formData.get("profileVersionId") || "");
+  const brandVoiceId = String(formData.get("brandVoiceId") || "");
+  if (!clientId || !profileVersionId || !brandVoiceId) return;
+
+  await createBrandVoiceLink({ profileVersionId, brandVoiceId });
+  revalidatePath(`/app/brand-core/${clientId}`);
+  redirect(`/app/brand-core/${clientId}`);
+}
+
 export default async function BrandCoreClientPage({
   params,
   searchParams,
@@ -99,6 +141,8 @@ export default async function BrandCoreClientPage({
   let clientName = "Client";
   let profile: ClientProfile | null = null;
   let versions: ClientProfileVersion[] = [];
+  let voices: BrandVoice[] = [];
+  let links: BrandVoiceLink[] = [];
   let error: string | null = queryError || null;
 
   try {
@@ -111,11 +155,25 @@ export default async function BrandCoreClientPage({
       versions = await listClientProfileVersions(profile.id);
       versions = [...versions].sort((a, b) => b.version - a.version);
     }
+    voices = await listBrandVoices();
   } catch (e) {
     error = e instanceof Error ? e.message : "Failed to load profile";
   }
 
   const latest = versions[0] ?? null;
+  if (latest) {
+    try {
+      links = await listBrandVoiceLinks(latest.id);
+    } catch (e) {
+      error =
+        error ??
+        (e instanceof Error ? e.message : "Failed to load brand voice links");
+    }
+  }
+
+  const voiceById = new Map(voices.map((v) => [v.id, v]));
+  const linkedVoiceIds = new Set(links.map((l) => l.brandVoiceId));
+  const unlinkableVoices = voices.filter((v) => !linkedVoiceIds.has(v.id));
 
   return (
     <div className="mx-auto max-w-3xl px-8 py-10">
@@ -245,6 +303,121 @@ export default async function BrandCoreClientPage({
               Save version
             </button>
           </form>
+
+          {latest ? (
+            <div className="mt-8 space-y-6 rounded-2xl border border-gcw-line bg-white p-5">
+              <div>
+                <h2 className="font-heading text-lg font-medium">
+                  Brand voice
+                </h2>
+                <p className="mt-1 text-sm text-gcw-muted">
+                  Voices linked to latest profile version (v{latest.version}).
+                </p>
+              </div>
+
+              {links.length > 0 ? (
+                <ul className="space-y-2">
+                  {links.map((link) => {
+                    const voice = voiceById.get(link.brandVoiceId);
+                    return (
+                      <li
+                        key={link.id}
+                        className="rounded-xl border border-gcw-line bg-gcw-surface px-4 py-3 text-sm"
+                      >
+                        <p className="font-medium">
+                          {voice?.name ?? "Unknown voice"}
+                        </p>
+                        <p className="mt-1 text-xs text-gcw-muted">
+                          Tone: {voice?.tone ?? "—"}
+                        </p>
+                        {voice?.sampleText ? (
+                          <p className="mt-2 line-clamp-3 text-xs text-gcw-ink">
+                            {voice.sampleText}
+                          </p>
+                        ) : null}
+                      </li>
+                    );
+                  })}
+                </ul>
+              ) : (
+                <p className="text-sm text-gcw-muted">
+                  No voices linked yet.
+                </p>
+              )}
+
+              <form action={createAndLinkVoiceAction} className="space-y-3">
+                <h3 className="text-sm font-semibold">Create &amp; link voice</h3>
+                <input type="hidden" name="clientId" value={clientId} />
+                <input
+                  type="hidden"
+                  name="profileVersionId"
+                  value={latest.id}
+                />
+                <input
+                  name="name"
+                  required
+                  placeholder="Voice name"
+                  className="w-full rounded-lg border border-gcw-line px-3 py-2 text-sm"
+                />
+                <input
+                  name="tone"
+                  required
+                  placeholder="Tone (e.g. confident, plain-spoken)"
+                  className="w-full rounded-lg border border-gcw-line px-3 py-2 text-sm"
+                />
+                <input
+                  name="description"
+                  placeholder="Short description"
+                  className="w-full rounded-lg border border-gcw-line px-3 py-2 text-sm"
+                />
+                <textarea
+                  name="sampleText"
+                  rows={3}
+                  placeholder="Sample copy in this voice"
+                  className="w-full rounded-lg border border-gcw-line px-3 py-2 text-sm"
+                />
+                <button
+                  type="submit"
+                  className="rounded-pill bg-gcw-ink px-4 py-2 text-sm font-semibold text-white"
+                >
+                  Create &amp; link
+                </button>
+              </form>
+
+              {unlinkableVoices.length > 0 ? (
+                <form action={linkExistingVoiceAction} className="space-y-3">
+                  <h3 className="text-sm font-semibold">Link existing voice</h3>
+                  <input type="hidden" name="clientId" value={clientId} />
+                  <input
+                    type="hidden"
+                    name="profileVersionId"
+                    value={latest.id}
+                  />
+                  <select
+                    name="brandVoiceId"
+                    required
+                    className="w-full rounded-lg border border-gcw-line px-3 py-2 text-sm"
+                    defaultValue=""
+                  >
+                    <option value="" disabled>
+                      Select a voice
+                    </option>
+                    {unlinkableVoices.map((v) => (
+                      <option key={v.id} value={v.id}>
+                        {v.name} ({v.tone})
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    type="submit"
+                    className="rounded-pill border border-gcw-line bg-white px-4 py-2 text-sm font-semibold text-gcw-ink"
+                  >
+                    Link voice
+                  </button>
+                </form>
+              ) : null}
+            </div>
+          ) : null}
 
           {versions.length > 0 ? (
             <div className="mt-8">
