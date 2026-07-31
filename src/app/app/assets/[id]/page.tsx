@@ -13,6 +13,7 @@ import {
   listAssetVersions,
   listReviewComments,
   resolveReviewComment,
+  reviseAssetVersion,
   updateAssetStatus,
   type ApprovalEvent,
   type ContentAssetVersion,
@@ -103,6 +104,37 @@ async function resolveCommentAction(formData: FormData) {
   redirect(
     `/app/assets/${assetId}?clientId=${clientId}&versionId=${versionId}`,
   );
+}
+
+async function reviseVersionAction(formData: FormData) {
+  "use server";
+  const assetId = String(formData.get("assetId") || "");
+  const clientId = String(formData.get("clientId") || "");
+  const versionId = String(formData.get("versionId") || "");
+  const feedback = String(formData.get("feedback") || "").trim();
+  const provider = String(formData.get("provider") || "OpenAi").trim();
+  if (!assetId || !versionId || !feedback) return;
+
+  try {
+    const version = await reviseAssetVersion(versionId, { feedback, provider });
+    revalidatePath(`/app/assets/${assetId}`);
+    redirect(
+      `/app/assets/${assetId}?clientId=${clientId}&versionId=${version.id}`,
+    );
+  } catch (e) {
+    if (
+      typeof e === "object" &&
+      e &&
+      "digest" in e &&
+      String((e as { digest?: string }).digest).startsWith("NEXT_REDIRECT")
+    ) {
+      throw e;
+    }
+    const msg = e instanceof Error ? e.message : "Revise failed";
+    redirect(
+      `/app/assets/${assetId}?clientId=${clientId}&versionId=${versionId}&error=${encodeURIComponent(msg)}`,
+    );
+  }
 }
 
 async function createApprovalAction(formData: FormData) {
@@ -307,6 +339,43 @@ export default async function AssetDetailPage({
 
       {selectedVersion ? (
         <>
+          <form
+            action={reviseVersionAction}
+            className="mt-10 space-y-3 rounded-2xl border border-gcw-line bg-white p-5"
+          >
+            <h2 className="font-heading text-lg font-medium">
+              Revise chat · v{selectedVersion.versionNumber}
+            </h2>
+            <p className="text-sm text-gcw-muted">
+              Describe the change (tighten lede, add FAQ, soften tone). Saves a
+              new version so history is preserved.
+            </p>
+            <input type="hidden" name="assetId" value={asset.id} />
+            <input type="hidden" name="clientId" value={clientId} />
+            <input type="hidden" name="versionId" value={selectedVersion.id} />
+            <textarea
+              name="feedback"
+              required
+              rows={3}
+              placeholder="e.g. Tighten the lede and add a short FAQ section before the CTA."
+              className="w-full rounded-lg border border-gcw-line px-3 py-2 text-sm"
+            />
+            <select
+              name="provider"
+              defaultValue="OpenAi"
+              className="w-full rounded-lg border border-gcw-line px-3 py-2 text-sm"
+            >
+              <option value="OpenAi">OpenAI</option>
+              <option value="Anthropic">Anthropic</option>
+            </select>
+            <button
+              type="submit"
+              className="rounded-pill bg-gcw-ink px-4 py-2 text-sm font-semibold text-white"
+            >
+              Apply revise
+            </button>
+          </form>
+
           <div className="mt-10 rounded-2xl border border-gcw-line bg-white p-5">
             <h2 className="font-heading text-lg font-medium">
               Review comments · v{selectedVersion.versionNumber}

@@ -910,6 +910,20 @@ export function updateAssetVersion(id: string, bodyDocumentJson: string) {
   });
 }
 
+/** Iterative revise: feedback → new ContentDocument version. */
+export function reviseAssetVersion(
+  versionId: string,
+  body: { feedback: string; provider?: string },
+) {
+  return geekApiFetch<ContentAssetVersion>(
+    `/api/gcw/asset-versions/${versionId}/revise`,
+    {
+      method: "POST",
+      body: JSON.stringify(body),
+    },
+  );
+}
+
 export function listReviewComments(assetVersionId: string) {
   return geekApiFetch<ReviewComment[]>(
     `/api/gcw/review-comments?assetVersionId=${encodeURIComponent(assetVersionId)}`,
