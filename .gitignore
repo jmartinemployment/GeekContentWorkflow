@@ -44,3 +44,6 @@ next-env.d.ts
 PLAN.md
 LONG_TERM_PLAN.md
 HANDOFF.md
+
+# large media (keep local)
+/public/videos/
