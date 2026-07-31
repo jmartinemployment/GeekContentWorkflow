@@ -367,6 +367,20 @@ export function rejectStrategyBrief(id: string) {
   });
 }
 
+/** Brand-grounded structured draft → new asset version (Horizon B). */
+export function generateDraftFromBrief(
+  briefId: string,
+  body: { assetId: string; provider?: string },
+) {
+  return geekApiFetch<ContentAssetVersion>(
+    `/api/gcw/strategy-briefs/${briefId}/generate`,
+    {
+      method: "POST",
+      body: JSON.stringify(body),
+    },
+  );
+}
+
 // —— Client profiles + versions (GCW facade over Repository) ——
 
 export type ClientProfile = {

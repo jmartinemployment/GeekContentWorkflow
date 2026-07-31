@@ -1,13 +1,18 @@
 import Link from "next/link";
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import {
   BUYING_STAGES,
   approveStrategyBrief,
+  createAsset,
+  generateDraftFromBrief,
   getCampaign,
   getPainPoint,
   getStrategyBrief,
+  listAssets,
   rejectStrategyBrief,
   updateStrategyBrief,
+  type ContentAsset,
 } from "@/lib/geek-api";
 
 const EMPTY_GUID = "00000000-0000-0000-0000-000000000000";
@@ -48,22 +53,77 @@ async function rejectAction(formData: FormData) {
   revalidatePath("/app/strategy-briefs");
 }
 
+async function generateDraftAction(formData: FormData) {
+  "use server";
+  const briefId = String(formData.get("briefId") || "");
+  const clientId = String(formData.get("clientId") || "");
+  let assetId = String(formData.get("assetId") || "").trim();
+  const createNew = String(formData.get("createNew") || "") === "1";
+  const campaignId = String(formData.get("campaignId") || "");
+  const assetName = String(formData.get("assetName") || "").trim();
+  const provider = String(formData.get("provider") || "OpenAi").trim();
+
+  if (!briefId || !clientId || !campaignId) return;
+
+  try {
+    if (createNew || !assetId) {
+      const name = assetName || "Generated pillar draft";
+      const asset = await createAsset({
+        campaignId,
+        name,
+        type: "pillar",
+      });
+      assetId = asset.id;
+    }
+
+    const version = await generateDraftFromBrief(briefId, {
+      assetId,
+      provider,
+    });
+    revalidatePath(`/app/strategy-briefs/${briefId}`);
+    revalidatePath(`/app/assets/${assetId}`);
+    redirect(
+      `/app/assets/${assetId}?clientId=${clientId}&versionId=${version.id}`,
+    );
+  } catch (e) {
+    if (
+      typeof e === "object" &&
+      e &&
+      "digest" in e &&
+      String((e as { digest?: string }).digest).startsWith("NEXT_REDIRECT")
+    ) {
+      throw e;
+    }
+    const msg =
+      e instanceof Error ? e.message : "Draft generation failed";
+    redirect(
+      `/app/strategy-briefs/${briefId}?error=${encodeURIComponent(msg)}`,
+    );
+  }
+}
+
 export default async function StrategyBriefDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ error?: string }>;
 }) {
   const { id } = await params;
+  const { error: queryError } = await searchParams;
   let brief: Awaited<ReturnType<typeof getStrategyBrief>> | null = null;
   let campaignName: string | null = null;
+  let clientId = "";
   let painPointName: string | null = null;
-  let error: string | null = null;
+  let assets: ContentAsset[] = [];
+  let error: string | null = queryError || null;
 
   try {
     brief = await getStrategyBrief(id);
     try {
       const campaign = await getCampaign(brief.campaignId);
       campaignName = campaign.name;
+      clientId = campaign.clientId;
     } catch {
       campaignName = null;
     }
@@ -75,6 +135,7 @@ export default async function StrategyBriefDetailPage({
         painPointName = null;
       }
     }
+    assets = await listAssets(brief.campaignId).catch(() => []);
   } catch (e) {
     error = e instanceof Error ? e.message : "Failed to load brief";
   }
@@ -143,6 +204,12 @@ export default async function StrategyBriefDetailPage({
         </div>
       </div>
 
+      {error ? (
+        <p className="mt-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          {error}
+        </p>
+      ) : null}
+
       <form
         action={updateBriefAction}
         className="mt-8 space-y-3 rounded-2xl border border-gcw-line bg-white p-5"
@@ -201,6 +268,72 @@ export default async function StrategyBriefDetailPage({
           className="rounded-pill bg-gcw-ink px-4 py-2 text-sm font-semibold text-white"
         >
           Save changes
+        </button>
+      </form>
+
+      <form
+        action={generateDraftAction}
+        className="mt-8 space-y-3 rounded-2xl border border-gcw-line bg-white p-5"
+      >
+        <h2 className="font-heading text-lg font-medium">
+          Generate brand-grounded draft
+        </h2>
+        <p className="text-sm text-gcw-muted">
+          Uses this brief, linked evidence, and Brand Core facts/voice when the
+          campaign has a profile version. Saves a new structured asset version.
+        </p>
+        <input type="hidden" name="briefId" value={brief.id} />
+        <input type="hidden" name="clientId" value={clientId} />
+        <input type="hidden" name="campaignId" value={brief.campaignId} />
+
+        {assets.length > 0 ? (
+          <label className="block text-sm">
+            <span className="mb-1 block text-gcw-muted">Existing asset</span>
+            <select
+              name="assetId"
+              className="w-full rounded-lg border border-gcw-line px-3 py-2 text-sm"
+              defaultValue={assets[0]?.id}
+            >
+              {assets.map((a) => (
+                <option key={a.id} value={a.id}>
+                  {a.name} ({a.type})
+                </option>
+              ))}
+            </select>
+          </label>
+        ) : null}
+
+        <label className="flex items-center gap-2 text-sm">
+          <input
+            type="checkbox"
+            name="createNew"
+            value="1"
+            defaultChecked={assets.length === 0}
+          />
+          Create new pillar asset
+        </label>
+        <input
+          name="assetName"
+          placeholder="New asset name (if creating)"
+          defaultValue={`${brief.angle.slice(0, 48)} draft`}
+          className="w-full rounded-lg border border-gcw-line px-3 py-2 text-sm"
+        />
+        <label className="block text-sm">
+          <span className="mb-1 block text-gcw-muted">Provider</span>
+          <select
+            name="provider"
+            defaultValue="OpenAi"
+            className="w-full rounded-lg border border-gcw-line px-3 py-2 text-sm"
+          >
+            <option value="OpenAi">OpenAI</option>
+            <option value="Anthropic">Anthropic</option>
+          </select>
+        </label>
+        <button
+          type="submit"
+          className="rounded-pill bg-gcw-ink px-4 py-2 text-sm font-semibold text-white"
+        >
+          Generate draft
         </button>
       </form>
     </div>
