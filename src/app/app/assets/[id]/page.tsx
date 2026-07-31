@@ -13,12 +13,14 @@ import {
   listAssetVersions,
   listReviewComments,
   listTonePresets,
+  getAssetVersionSeo,
   resolveReviewComment,
   reviseAssetVersion,
   updateAssetStatus,
   type ApprovalEvent,
   type ContentAssetVersion,
   type ReviewComment,
+  type SeoReport,
   type TonePreset,
 } from "@/lib/geek-api";
 
@@ -144,6 +146,41 @@ async function reviseVersionAction(formData: FormData) {
   }
 }
 
+async function applySeoFixesAction(formData: FormData) {
+  "use server";
+  const assetId = String(formData.get("assetId") || "");
+  const clientId = String(formData.get("clientId") || "");
+  const versionId = String(formData.get("versionId") || "");
+  const feedback = String(formData.get("feedback") || "").trim();
+  const provider = String(formData.get("provider") || "OpenAi").trim();
+  if (!assetId || !versionId || !feedback) return;
+
+  try {
+    const version = await reviseAssetVersion(versionId, {
+      feedback,
+      provider,
+      tone: "professional",
+    });
+    revalidatePath(`/app/assets/${assetId}`);
+    redirect(
+      `/app/assets/${assetId}?clientId=${clientId}&versionId=${version.id}`,
+    );
+  } catch (e) {
+    if (
+      typeof e === "object" &&
+      e &&
+      "digest" in e &&
+      String((e as { digest?: string }).digest).startsWith("NEXT_REDIRECT")
+    ) {
+      throw e;
+    }
+    const msg = e instanceof Error ? e.message : "SEO apply failed";
+    redirect(
+      `/app/assets/${assetId}?clientId=${clientId}&versionId=${versionId}&error=${encodeURIComponent(msg)}`,
+    );
+  }
+}
+
 async function createApprovalAction(formData: FormData) {
   "use server";
   const assetId = String(formData.get("assetId") || "");
@@ -189,6 +226,7 @@ export default async function AssetDetailPage({
   let comments: ReviewComment[] = [];
   let approvals: ApprovalEvent[] = [];
   let tones: TonePreset[] = [];
+  let seo: SeoReport | null = null;
   let error: string | null = queryError || null;
 
   try {
@@ -213,9 +251,10 @@ export default async function AssetDetailPage({
 
   if (selectedVersionId) {
     try {
-      [comments, approvals] = await Promise.all([
+      [comments, approvals, seo] = await Promise.all([
         listReviewComments(selectedVersionId),
         listApprovalEvents(selectedVersionId),
+        getAssetVersionSeo(selectedVersionId).catch(() => null),
       ]);
       comments = [...comments].sort(
         (a, b) =>
@@ -350,6 +389,85 @@ export default async function AssetDetailPage({
 
       {selectedVersion ? (
         <>
+          {seo ? (
+            <div className="mt-10 rounded-2xl border border-gcw-line bg-white p-5">
+              <div className="flex flex-wrap items-baseline justify-between gap-2">
+                <h2 className="font-heading text-lg font-medium">
+                  SEO · v{selectedVersion.versionNumber}
+                </h2>
+                <p className="text-sm text-gcw-muted">
+                  Score{" "}
+                  <span className="font-semibold text-gcw-ink">{seo.score}</span>
+                  /100
+                  {seo.targetKeyword
+                    ? ` · keyword “${seo.targetKeyword}”`
+                    : " · no campaign keyword"}
+                </p>
+              </div>
+              <p className="mt-1 text-xs text-gcw-zinc">
+                {seo.wordCount} words · {seo.sectionCount} sections · density{" "}
+                {seo.keywordDensityPercent.toFixed(2)}%
+              </p>
+              <ul className="mt-4 space-y-2">
+                {seo.checks.map((c) => (
+                  <li
+                    key={c.id}
+                    className="rounded-lg border border-gcw-line px-3 py-2 text-sm"
+                  >
+                    <p>
+                      <span
+                        className={
+                          c.passed ? "text-emerald-700" : "text-amber-800"
+                        }
+                      >
+                        {c.passed ? "Pass" : "Fix"}
+                      </span>
+                      {" · "}
+                      <span className="font-medium">{c.label}</span>
+                    </p>
+                    <p className="mt-0.5 text-gcw-muted">{c.detail}</p>
+                    {!c.passed && c.fixHint ? (
+                      <p className="mt-0.5 text-xs text-gcw-zinc">{c.fixHint}</p>
+                    ) : null}
+                  </li>
+                ))}
+              </ul>
+              {seo.score < 100 && seo.applyFeedback ? (
+                <form
+                  action={applySeoFixesAction}
+                  className="mt-4 space-y-2 border-t border-gcw-line pt-4"
+                >
+                  <input type="hidden" name="assetId" value={asset.id} />
+                  <input type="hidden" name="clientId" value={clientId} />
+                  <input
+                    type="hidden"
+                    name="versionId"
+                    value={selectedVersion.id}
+                  />
+                  <input
+                    type="hidden"
+                    name="feedback"
+                    value={seo.applyFeedback}
+                  />
+                  <select
+                    name="provider"
+                    defaultValue="OpenAi"
+                    className="w-full rounded-lg border border-gcw-line px-3 py-2 text-sm"
+                  >
+                    <option value="OpenAi">OpenAI</option>
+                    <option value="Anthropic">Anthropic</option>
+                  </select>
+                  <button
+                    type="submit"
+                    className="rounded-pill bg-gcw-ink px-4 py-2 text-sm font-semibold text-white"
+                  >
+                    Apply SEO fixes
+                  </button>
+                </form>
+              ) : null}
+            </div>
+          ) : null}
+
           <form
             action={reviseVersionAction}
             className="mt-10 space-y-3 rounded-2xl border border-gcw-line bg-white p-5"

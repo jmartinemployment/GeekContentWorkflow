@@ -952,6 +952,28 @@ export function reviseAssetVersion(
   );
 }
 
+export type SeoCheck = {
+  id: string;
+  label: string;
+  passed: boolean;
+  detail: string;
+  fixHint?: string | null;
+};
+
+export type SeoReport = {
+  targetKeyword: string;
+  score: number;
+  wordCount: number;
+  sectionCount: number;
+  keywordDensityPercent: number;
+  checks: SeoCheck[];
+  applyFeedback: string;
+};
+
+export function getAssetVersionSeo(versionId: string) {
+  return geekApiFetch<SeoReport>(`/api/gcw/asset-versions/${versionId}/seo`);
+}
+
 export function listReviewComments(assetVersionId: string) {
   return geekApiFetch<ReviewComment[]>(
     `/api/gcw/review-comments?assetVersionId=${encodeURIComponent(assetVersionId)}`,
