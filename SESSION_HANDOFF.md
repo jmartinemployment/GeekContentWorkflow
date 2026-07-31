@@ -42,8 +42,15 @@ All smoke-tested against production unless noted.
 | **Horizon B: iterative revise chat** | **Done 2026-07-31** | `POST /api/gcw/asset-versions/{id}/revise` |
 | **Horizon B: templates + tones** | **Done 2026-07-31** | `/api/gcw/drafting/templates|tones` |
 | **Horizon B: in-editor SEO** | **Done 2026-07-31** | `GET /api/gcw/asset-versions/{id}/seo` |
+| **Horizon B: polish ship-check** | **Done 2026-07-31** | `GET /api/gcw/asset-versions/{id}/polish` |
 
-### In-editor SEO (latest)
+### Polish ship-check (latest)
+
+**Backend `8735f22`:** `GcwPolishAnalyzer` + `GET /api/gcw/asset-versions/{id}/polish` (clarity/filler/placeholders/prohibited claims + `shipReady`).
+
+**Frontend `8317e3c`:** Polish panel on asset page; submit/approve blocked when `!shipReady`; smoke `scripts/smoke-polish.py` → **PASS**.
+
+### In-editor SEO (prior)
 
 **Backend `452967e`:** `GcwSeoAnalyzer` + `GET /api/gcw/asset-versions/{id}/seo` (campaign keyword heuristics + applyFeedback).
 
@@ -121,10 +128,9 @@ All smoke-tested against production unless noted.
 
 ## Next work
 
-**Horizon B drafting excellence** (partial): generate + revise + templates/tones are live.
+**Horizon B drafting excellence** (partial): generate + revise + templates/tones + SEO + polish are live.
 
 Still open in Horizon B:
-- Grammarly-class polish gate
 - Repurpose: pillar → social/ad variants
 
 User preference: when they say **continue**, pick the next clear item and implement.
@@ -191,7 +197,7 @@ python3 scripts/smoke-brand-voices.py
 
 ```
 Continue Geek Content Workflow from SESSION_HANDOFF.md.
-Horizon B: generate + revise + templates/tones + SEO shipped (backend 452967e, frontend aaec0ec).
-Next: polish gate or repurpose.
+Horizon B: generate + revise + templates/tones + SEO + polish shipped (backend 8735f22, frontend 8317e3c).
+Next: repurpose (pillar → social/ad variants).
 Never call /api/content-writer/v3/*.
 ```
