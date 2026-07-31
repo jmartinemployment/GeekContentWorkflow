@@ -40,8 +40,15 @@ All smoke-tested against production unless noted.
 | **Reviews queue + Insights** | **Done 2026-07-31** | `/app/reviews`, `/app/insights` |
 | **Horizon B: brand-grounded generate** | **Done 2026-07-31** | `POST /api/gcw/strategy-briefs/{id}/generate` |
 | **Horizon B: iterative revise chat** | **Done 2026-07-31** | `POST /api/gcw/asset-versions/{id}/revise` |
+| **Horizon B: templates + tones** | **Done 2026-07-31** | `/api/gcw/drafting/templates|tones` |
 
-### Iterative revise (latest)
+### Templates + tones (latest)
+
+**Backend `c1b58c7`:** Drafting catalog + template/tone guidance on generate/revise.
+
+**Frontend `7488671`:** Template/tone selects on brief generate and asset revise; smoke `scripts/smoke-templates-tones.py` → **PASS**.
+
+### Iterative revise (prior)
 
 **Backend `cafc320`:** `ReviseStructuredDraftAsync` on OpenAI/Claude + GCW revise endpoint.
 
@@ -107,10 +114,9 @@ All smoke-tested against production unless noted.
 
 ## Next work
 
-**Horizon B drafting excellence** (partial): generate + revise chat are live.
+**Horizon B drafting excellence** (partial): generate + revise + templates/tones are live.
 
 Still open in Horizon B:
-- Template library + tone controls
 - In-editor SEO optimization
 - Grammarly-class polish gate
 - Repurpose: pillar → social/ad variants
@@ -179,7 +185,7 @@ python3 scripts/smoke-brand-voices.py
 
 ```
 Continue Geek Content Workflow from SESSION_HANDOFF.md.
-Horizon B: generate + revise shipped (backend cafc320, frontend 532a80e, smokes PASS).
-Next: templates/tone, SEO editor, polish gate, or repurpose.
+Horizon B: generate + revise + templates/tones shipped (backend c1b58c7, frontend 7488671).
+Next: SEO editor, polish gate, or repurpose.
 Never call /api/content-writer/v3/*.
 ```
