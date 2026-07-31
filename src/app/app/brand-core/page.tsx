@@ -121,10 +121,10 @@ export default async function BrandCorePage() {
                     {profile ? "Open profile →" : "Create profile →"}
                   </Link>
                   <Link
-                    href={`/app/strategy-map?clientId=${c.id}`}
+                    href={`/app/drafting?clientId=${c.id}`}
                     className="text-sm font-medium text-gcw-muted underline-offset-2 hover:underline"
                   >
-                    Projects
+                    Drafting
                   </Link>
                 </div>
               </div>

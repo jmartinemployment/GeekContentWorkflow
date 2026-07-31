@@ -180,6 +180,16 @@ export function commitHtmlExport(id: string) {
 export const BUYING_STAGES = ["awareness", "research", "decision"] as const;
 export type BuyingStage = (typeof BUYING_STAGES)[number];
 
+export const CAMPAIGN_STATUSES = [
+  "draft",
+  "research",
+  "strategy",
+  "drafting",
+  "published",
+  "archived",
+] as const;
+export type CampaignStatus = (typeof CAMPAIGN_STATUSES)[number];
+
 export type GcwCampaign = {
   id: string;
   clientId: string;
@@ -342,5 +352,58 @@ export function createClientProfileVersion(body: {
   return geekApiFetch<ClientProfileVersion>("/api/gcw/client-profile-versions", {
     method: "POST",
     body: JSON.stringify(body),
+  });
+}
+
+// —— Keyword candidates (GCW facade over Repository) ——
+
+export const KEYWORD_STATUSES = [
+  "draft",
+  "research-queued",
+  "researched",
+  "briefed",
+  "rejected",
+] as const;
+export type KeywordStatus = (typeof KEYWORD_STATUSES)[number];
+
+export type KeywordCandidate = {
+  id: string;
+  clientId: string;
+  keyword: string;
+  searchVolume?: number | null;
+  difficulty?: number | null;
+  intent?: string | null;
+  status: string;
+  createdAtUtc: string;
+  updatedAtUtc: string;
+};
+
+export function listKeywords(clientId: string) {
+  return geekApiFetch<KeywordCandidate[]>(
+    `/api/gcw/keywords?clientId=${encodeURIComponent(clientId)}`,
+  );
+}
+
+export function getKeyword(id: string) {
+  return geekApiFetch<KeywordCandidate>(`/api/gcw/keywords/${id}`);
+}
+
+export function createKeyword(body: {
+  clientId: string;
+  keyword: string;
+  searchVolume?: number | null;
+  difficulty?: number | null;
+  intent?: string | null;
+}) {
+  return geekApiFetch<KeywordCandidate>("/api/gcw/keywords", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
+
+export function updateKeywordStatus(id: string, status: string) {
+  return geekApiFetch<KeywordCandidate>(`/api/gcw/keywords/${id}/status`, {
+    method: "PATCH",
+    body: JSON.stringify({ status }),
   });
 }
