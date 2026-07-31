@@ -1,14 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 
 /**
  * Receives ?code= from GeekOAuth, posts to /api/auth/token (server exchange).
  * Never stores access tokens in the browser.
  */
 export function AuthCallbackClient() {
-  const router = useRouter();
   const params = useSearchParams();
   const [error, setError] = useState<string | null>(null);
 
@@ -37,13 +36,14 @@ export function AuthCallbackClient() {
         setError(body?.error || "Sign-in failed");
         return;
       }
-      router.replace("/app");
+      // Hard navigation so the refresh cookie from /api/auth/token is always sent.
+      window.location.assign("/app");
     })();
 
     return () => {
       cancelled = true;
     };
-  }, [params, router]);
+  }, [params]);
 
   if (error) {
     return (

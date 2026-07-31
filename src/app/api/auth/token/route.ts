@@ -25,7 +25,10 @@ export async function POST(request: Request) {
 
   try {
     const tokens = await exchangeAuthorizationCode(code, verifier);
-    const res = NextResponse.json({ ok: true });
+    const res = NextResponse.json({
+      ok: true,
+      hasRefresh: Boolean(tokens.refresh_token),
+    });
     if (tokens.refresh_token) {
       res.cookies.set(REFRESH_COOKIE, tokens.refresh_token, cookieOpts.refresh);
     }
