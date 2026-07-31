@@ -55,6 +55,8 @@ All smoke-tested against production unless noted.
 
 **Frontend `acdcda1`:** Generate visual on asset page (lands on image preview + download); `/app/media`; smoke `scripts/smoke-visuals.py` → **PASS**.
 
+**Text fix `5957e27` / image-generator `e413c25`:** Visuals now derive headline + caption from the draft and burn readable title text onto the image (SVG composite). Smoke re-PASS with Headline/Caption sections.
+
 ### Video SEO packs (prior)
 
 **Backend `37f1eec`:** `GenerateVideoSeoPackAsync` → titles/description/tags/chapters/thumbnails/shorts companions.
