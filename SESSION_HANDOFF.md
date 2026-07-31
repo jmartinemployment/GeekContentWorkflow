@@ -52,6 +52,8 @@ All smoke-tested against production unless noted.
 
 **Frontend `992c118`:** `/app/video-seo` + Generate video SEO pack on pillars; smoke `scripts/smoke-video-seo.py` → **PASS**.
 
+**UX fix `8157b8f`:** Asset pages render a readable draft preview (not just JSON). Pack generate lands on the first companion with copyable text. Smoke re-PASS.
+
 ### Repurpose packs (prior)
 
 **Backend `b07e048`:** `GenerateRepurposePackAsync` + catalog; creates companion assets (LinkedIn/X/Instagram/Meta/Google/email) from a pillar version.
