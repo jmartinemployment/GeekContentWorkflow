@@ -1,6 +1,11 @@
 import Link from "next/link";
 import { revalidatePath } from "next/cache";
 import {
+  ProjectActionForm,
+  type ProjectActionState,
+} from "@/components/app/ProjectActionForm";
+import {
+  GeekApiError,
   commitHtmlExport,
   crawlProject,
   generateAll,
@@ -10,39 +15,101 @@ import {
   updateProjectNotes,
 } from "@/lib/geek-api";
 
-async function crawlAction(formData: FormData) {
-  "use server";
-  const id = String(formData.get("projectId"));
-  await crawlProject(id);
-  revalidatePath(`/app/drafting/${id}`);
+/** Crawl / generate can run long; Vercel honors this for server actions on the page. */
+export const maxDuration = 300;
+
+function actionError(e: unknown): ProjectActionState {
+  if (e instanceof GeekApiError) {
+    const timeoutish =
+      e.status === 504 ||
+      e.status === 408 ||
+      /timeout|timed out|gateway/i.test(e.message);
+    return {
+      ok: false,
+      error: timeoutish
+        ? `${e.message} — long jobs can hit the host timeout; retry or check GeekAPI logs.`
+        : e.message,
+    };
+  }
+  return {
+    ok: false,
+    error: e instanceof Error ? e.message : "Action failed",
+  };
 }
 
-async function generateAllAction(formData: FormData) {
+async function crawlAction(
+  _prev: ProjectActionState,
+  formData: FormData,
+): Promise<ProjectActionState> {
   "use server";
   const id = String(formData.get("projectId"));
-  await generateAll(id);
-  revalidatePath(`/app/drafting/${id}`);
+  try {
+    await crawlProject(id);
+    revalidatePath(`/app/drafting/${id}`);
+    return { ok: true };
+  } catch (e) {
+    return actionError(e);
+  }
 }
 
-async function generatePillarAction(formData: FormData) {
+async function generateAllAction(
+  _prev: ProjectActionState,
+  formData: FormData,
+): Promise<ProjectActionState> {
   "use server";
   const id = String(formData.get("projectId"));
-  await generatePillar(id);
-  revalidatePath(`/app/drafting/${id}`);
+  try {
+    await generateAll(id);
+    revalidatePath(`/app/drafting/${id}`);
+    return { ok: true };
+  } catch (e) {
+    return actionError(e);
+  }
 }
 
-async function generateBlogAction(formData: FormData) {
+async function generatePillarAction(
+  _prev: ProjectActionState,
+  formData: FormData,
+): Promise<ProjectActionState> {
   "use server";
   const id = String(formData.get("projectId"));
-  await generateBlog(id);
-  revalidatePath(`/app/drafting/${id}`);
+  try {
+    await generatePillar(id);
+    revalidatePath(`/app/drafting/${id}`);
+    return { ok: true };
+  } catch (e) {
+    return actionError(e);
+  }
 }
 
-async function publishAction(formData: FormData) {
+async function generateBlogAction(
+  _prev: ProjectActionState,
+  formData: FormData,
+): Promise<ProjectActionState> {
   "use server";
   const id = String(formData.get("projectId"));
-  await commitHtmlExport(id);
-  revalidatePath(`/app/drafting/${id}`);
+  try {
+    await generateBlog(id);
+    revalidatePath(`/app/drafting/${id}`);
+    return { ok: true };
+  } catch (e) {
+    return actionError(e);
+  }
+}
+
+async function publishAction(
+  _prev: ProjectActionState,
+  formData: FormData,
+): Promise<ProjectActionState> {
+  "use server";
+  const id = String(formData.get("projectId"));
+  try {
+    await commitHtmlExport(id);
+    revalidatePath(`/app/drafting/${id}`);
+    return { ok: true };
+  } catch (e) {
+    return actionError(e);
+  }
 }
 
 async function notesAction(formData: FormData) {
@@ -95,7 +162,7 @@ export default async function ProjectDraftingPage({
       </p>
 
       {project.crawl ? (
-        <p className="mt-3 rounded-lg bg-white px-3 py-2 text-xs text-gcw-muted border border-gcw-line">
+        <p className="mt-3 rounded-lg border border-gcw-line bg-white px-3 py-2 text-xs text-gcw-muted">
           Crawled {project.crawl.pagesCrawled} pages · tone {project.crawl.detectedTone} ·
           focus {project.crawl.detectedFocus}
         </p>
@@ -117,29 +184,42 @@ export default async function ProjectDraftingPage({
         </button>
       </form>
 
-      <div className="mt-6 flex flex-wrap gap-2">
-        <ActionButton action={crawlAction} projectId={project.id} label="Crawl site" />
-        <ActionButton
+      <div className="mt-6 flex flex-wrap gap-3">
+        <ProjectActionForm
+          action={crawlAction}
+          projectId={project.id}
+          label="Crawl site"
+          pendingLabel="Crawling…"
+        />
+        <ProjectActionForm
           action={generatePillarAction}
           projectId={project.id}
           label="Generate pillar"
+          pendingLabel="Generating pillar…"
         />
-        <ActionButton
+        <ProjectActionForm
           action={generateBlogAction}
           projectId={project.id}
           label="Generate blog"
+          pendingLabel="Generating blog…"
         />
-        <ActionButton
+        <ProjectActionForm
           action={generateAllAction}
           projectId={project.id}
           label="Generate all"
+          pendingLabel="Generating all…"
         />
-        <ActionButton
+        <ProjectActionForm
           action={publishAction}
           projectId={project.id}
           label="Publish HTML commit"
+          pendingLabel="Publishing…"
         />
       </div>
+      <p className="mt-3 text-xs text-gcw-zinc">
+        Crawl and generate can take several minutes. Keep this tab open until the button
+        finishes — timeouts surface as an error under the action.
+      </p>
 
       <h2 className="mt-10 font-heading text-xl font-medium">Generated content</h2>
       <ul className="mt-4 space-y-4">
@@ -167,27 +247,5 @@ export default async function ProjectDraftingPage({
         ) : null}
       </ul>
     </div>
-  );
-}
-
-function ActionButton({
-  action,
-  projectId,
-  label,
-}: {
-  action: (formData: FormData) => Promise<void>;
-  projectId: string;
-  label: string;
-}) {
-  return (
-    <form action={action}>
-      <input type="hidden" name="projectId" value={projectId} />
-      <button
-        type="submit"
-        className="rounded-pill border border-gcw-line bg-white px-4 py-2 text-sm font-medium hover:bg-gcw-surface"
-      >
-        {label}
-      </button>
-    </form>
   );
 }
