@@ -104,18 +104,15 @@ def login_via_http(email: str, password: str) -> list[dict]:
 
     cookies: list[dict] = []
     for c in jar:
-        item = {
+        # Prefer url= so __Host- cookies are host-only (no Domain attribute).
+        item: dict = {
             "name": c.name,
             "value": c.value,
-            "domain": (c.domain or "auth.geekatyourspot.com").lstrip("."),
-            "path": c.path or "/",
-            "secure": bool(c.secure) or c.name.startswith("__Host-"),
+            "url": f"{AUTH}/",
             "httpOnly": True,
+            "secure": True,
+            "sameSite": "Lax",
         }
-        if c.name.startswith("__Host-"):
-            item["domain"] = "auth.geekatyourspot.com"
-            item["path"] = "/"
-            item["secure"] = True
         cookies.append(item)
     print(f"   cookies={[c['name'] for c in cookies]}")
     return cookies

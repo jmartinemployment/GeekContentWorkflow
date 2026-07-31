@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import {
+  ACCESS_COOKIE,
   PKCE_COOKIE,
   REFRESH_COOKIE,
   cookieOpts,
@@ -9,7 +10,7 @@ import { exchangeAuthorizationCode } from "@/lib/auth/tokens";
 
 /**
  * Server-side code → token exchange.
- * Persists only the refresh token in an httpOnly cookie.
+ * Persists refresh (+ short-lived access) in httpOnly cookies — never to client JS.
  */
 export async function POST(request: Request) {
   const { code } = (await request.json()) as { code?: string };
@@ -32,6 +33,11 @@ export async function POST(request: Request) {
     if (tokens.refresh_token) {
       res.cookies.set(REFRESH_COOKIE, tokens.refresh_token, cookieOpts.refresh);
     }
+    const maxAge = Math.max(30, Math.min(tokens.expires_in - 60, 60 * 10));
+    res.cookies.set(ACCESS_COOKIE, tokens.access_token, {
+      ...cookieOpts.access,
+      maxAge,
+    });
     res.cookies.set(PKCE_COOKIE, "", cookieOpts.clear);
     return res;
   } catch (error) {
