@@ -174,3 +174,113 @@ export function commitHtmlExport(id: string) {
     method: "POST",
   });
 }
+
+// —— Campaigns + Strategy Briefs (GCW facade over Repository) ——
+
+export const BUYING_STAGES = ["awareness", "research", "decision"] as const;
+export type BuyingStage = (typeof BUYING_STAGES)[number];
+
+export type GcwCampaign = {
+  id: string;
+  clientId: string;
+  name: string;
+  keyword: string;
+  status: string;
+  profileVersionId: string;
+  createdAtUtc: string;
+  updatedAtUtc: string;
+  rowVersion: number;
+};
+
+export type StrategyBrief = {
+  id: string;
+  campaignId: string;
+  painPointId: string;
+  audienceProfile: string;
+  buyingStage: string;
+  angle: string;
+  callToAction: string;
+  status: "draft" | "approved" | "rejected" | string;
+  rowVersion: number;
+  createdAtUtc: string;
+  updatedAtUtc: string;
+};
+
+export function listCampaigns(clientId: string) {
+  return geekApiFetch<GcwCampaign[]>(
+    `/api/gcw/campaigns?clientId=${encodeURIComponent(clientId)}`,
+  );
+}
+
+export function getCampaign(id: string) {
+  return geekApiFetch<GcwCampaign>(`/api/gcw/campaigns/${id}`);
+}
+
+export function createCampaign(body: {
+  clientId: string;
+  name: string;
+  keyword: string;
+}) {
+  return geekApiFetch<GcwCampaign>("/api/gcw/campaigns", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
+
+export function updateCampaignStatus(id: string, status: string) {
+  return geekApiFetch<GcwCampaign>(`/api/gcw/campaigns/${id}/status`, {
+    method: "PATCH",
+    body: JSON.stringify({ status }),
+  });
+}
+
+export function listStrategyBriefs(campaignId: string) {
+  return geekApiFetch<StrategyBrief[]>(
+    `/api/gcw/strategy-briefs?campaignId=${encodeURIComponent(campaignId)}`,
+  );
+}
+
+export function getStrategyBrief(id: string) {
+  return geekApiFetch<StrategyBrief>(`/api/gcw/strategy-briefs/${id}`);
+}
+
+export function createStrategyBrief(body: {
+  campaignId: string;
+  audienceProfile: string;
+  buyingStage: string;
+  angle: string;
+  callToAction: string;
+  painPointId?: string | null;
+}) {
+  return geekApiFetch<StrategyBrief>("/api/gcw/strategy-briefs", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
+
+export function updateStrategyBrief(
+  id: string,
+  body: {
+    audienceProfile: string;
+    buyingStage: string;
+    angle: string;
+    callToAction: string;
+  },
+) {
+  return geekApiFetch<StrategyBrief>(`/api/gcw/strategy-briefs/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(body),
+  });
+}
+
+export function approveStrategyBrief(id: string) {
+  return geekApiFetch<StrategyBrief>(`/api/gcw/strategy-briefs/${id}/approve`, {
+    method: "PATCH",
+  });
+}
+
+export function rejectStrategyBrief(id: string) {
+  return geekApiFetch<StrategyBrief>(`/api/gcw/strategy-briefs/${id}/reject`, {
+    method: "PATCH",
+  });
+}
