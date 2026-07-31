@@ -41,8 +41,15 @@ All smoke-tested against production unless noted.
 | **Horizon B: brand-grounded generate** | **Done 2026-07-31** | `POST /api/gcw/strategy-briefs/{id}/generate` |
 | **Horizon B: iterative revise chat** | **Done 2026-07-31** | `POST /api/gcw/asset-versions/{id}/revise` |
 | **Horizon B: templates + tones** | **Done 2026-07-31** | `/api/gcw/drafting/templates|tones` |
+| **Horizon B: in-editor SEO** | **Done 2026-07-31** | `GET /api/gcw/asset-versions/{id}/seo` |
 
-### Templates + tones (latest)
+### In-editor SEO (latest)
+
+**Backend `452967e`:** `GcwSeoAnalyzer` + `GET /api/gcw/asset-versions/{id}/seo` (campaign keyword heuristics + applyFeedback).
+
+**Frontend `aaec0ec`:** SEO panel on asset page (score/checks + Apply SEO fixes → revise); smoke `scripts/smoke-seo.py` → **PASS**.
+
+### Templates + tones (prior)
 
 **Backend `c1b58c7`:** Drafting catalog + template/tone guidance on generate/revise.
 
@@ -117,7 +124,6 @@ All smoke-tested against production unless noted.
 **Horizon B drafting excellence** (partial): generate + revise + templates/tones are live.
 
 Still open in Horizon B:
-- In-editor SEO optimization
 - Grammarly-class polish gate
 - Repurpose: pillar → social/ad variants
 
@@ -185,7 +191,7 @@ python3 scripts/smoke-brand-voices.py
 
 ```
 Continue Geek Content Workflow from SESSION_HANDOFF.md.
-Horizon B: generate + revise + templates/tones shipped (backend c1b58c7, frontend 7488671).
-Next: SEO editor, polish gate, or repurpose.
+Horizon B: generate + revise + templates/tones + SEO shipped (backend 452967e, frontend aaec0ec).
+Next: polish gate or repurpose.
 Never call /api/content-writer/v3/*.
 ```
