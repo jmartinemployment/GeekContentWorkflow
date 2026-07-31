@@ -29,6 +29,12 @@ async function videoSeoAction(formData: FormData) {
     });
     revalidatePath("/app/assets");
     revalidatePath("/app/video-seo");
+    const first = result.created[0];
+    if (first) {
+      redirect(
+        `/app/assets/${first.assetId}?clientId=${clientId}&versionId=${first.versionId}&packCreated=${result.created.length}&packKind=video`,
+      );
+    }
     redirect(
       `/app/assets?clientId=${clientId}&campaignId=${result.campaignId}&videoSeo=${result.created.length}`,
     );

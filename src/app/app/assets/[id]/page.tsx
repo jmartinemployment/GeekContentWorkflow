@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { ContentDocumentPreview } from "@/components/app/ContentDocumentPreview";
 import {
   APPROVAL_ACTIONS,
   ASSET_STATUSES,
@@ -242,6 +243,12 @@ async function repurposeVersionAction(formData: FormData) {
     });
     revalidatePath("/app/assets");
     revalidatePath("/app/repurpose");
+    const first = result.created[0];
+    if (first) {
+      redirect(
+        `/app/assets/${first.assetId}?clientId=${clientId}&versionId=${first.versionId}&packCreated=${result.created.length}&packKind=channel`,
+      );
+    }
     redirect(
       `/app/assets?clientId=${clientId}&campaignId=${result.campaignId || campaignId}&repurposed=${result.created.length}`,
     );
@@ -278,6 +285,12 @@ async function videoSeoVersionAction(formData: FormData) {
     });
     revalidatePath("/app/assets");
     revalidatePath("/app/video-seo");
+    const first = result.created[0];
+    if (first) {
+      redirect(
+        `/app/assets/${first.assetId}?clientId=${clientId}&versionId=${first.versionId}&packCreated=${result.created.length}&packKind=video`,
+      );
+    }
     redirect(
       `/app/assets?clientId=${clientId}&campaignId=${result.campaignId || campaignId}&videoSeo=${result.created.length}`,
     );
@@ -350,6 +363,8 @@ export default async function AssetDetailPage({
     clientId?: string;
     versionId?: string;
     error?: string;
+    packCreated?: string;
+    packKind?: string;
   }>;
 }) {
   const { id } = await params;
@@ -357,6 +372,8 @@ export default async function AssetDetailPage({
     clientId = "",
     versionId: filterVersionId,
     error: queryError,
+    packCreated,
+    packKind,
   } = await searchParams;
 
   let asset: Awaited<ReturnType<typeof getAsset>> | null = null;
@@ -450,6 +467,21 @@ export default async function AssetDetailPage({
         </p>
       ) : null}
 
+      {packCreated ? (
+        <p className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
+          Pack ready — showing the first of {packCreated}{" "}
+          {packKind === "video" ? "video SEO" : "channel"} companions. Scroll
+          the draft below to copy titles, tags, or copy.{" "}
+          <Link
+            href={`/app/assets?clientId=${clientId}&campaignId=${asset.campaignId}`}
+            className="underline"
+          >
+            See all assets in this campaign
+          </Link>
+          .
+        </p>
+      ) : null}
+
       {advance ? (
         <form action={updateStatusAction} className="mt-4">
           <input type="hidden" name="assetId" value={asset.id} />
@@ -464,13 +496,23 @@ export default async function AssetDetailPage({
         </form>
       ) : null}
 
+      {selectedVersion?.bodyDocumentJson ? (
+        <div className="mt-8">
+          <ContentDocumentPreview
+            bodyDocumentJson={selectedVersion.bodyDocumentJson}
+            title={`Draft · v${selectedVersion.versionNumber}`}
+          />
+        </div>
+      ) : null}
+
       <form
         action={createVersionAction}
         className="mt-8 space-y-3 rounded-2xl border border-gcw-line bg-white p-5"
       >
-        <h2 className="font-heading text-lg font-medium">New draft version</h2>
+        <h2 className="font-heading text-lg font-medium">Edit raw JSON</h2>
         <p className="text-sm text-gcw-muted">
-          Structured ContentDocument JSON (lede + sections).
+          Structured ContentDocument JSON (lede + sections). Prefer the preview
+          above for reading; use this to hand-edit.
         </p>
         <input type="hidden" name="assetId" value={asset.id} />
         <input type="hidden" name="clientId" value={clientId} />

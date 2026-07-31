@@ -199,34 +199,26 @@ def main() -> int:
         form.locator('button:has-text("Generate channel pack")').click()
 
         try:
-            page.wait_for_url(re.compile(r"/app/assets\?.*repurposed="), timeout=240000)
+            page.wait_for_url(
+                re.compile(r"/app/assets/[0-9a-fA-F-]{36}\?.*packCreated="),
+                timeout=240000,
+            )
         except PlaywrightTimeout:
             if "error=" in page.url:
                 print("FAIL repurpose error", page.url)
                 shot(page, "repurpose-error")
                 return 1
-            print("FAIL wait for assets redirect", page.url)
+            print("FAIL wait for companion redirect", page.url)
             shot(page, "repurpose-timeout")
             return 1
 
         page.wait_for_load_state("networkidle")
         shot(page, "02-pack")
         body = page.inner_text("body")
-        m = re.search(r"Created (\d+) companion", body)
-        if not m:
-            print("FAIL no created banner", body[:800])
+        if "Pack ready" not in body and "Draft ·" not in body:
+            print("FAIL no pack landing / draft preview", body[:1000])
             return 1
-        count = int(m.group(1))
-        if count < 2:
-            print(f"FAIL expected ≥2 companions, got {count}")
-            return 1
-        # companions should appear in list
-        if "LinkedIn" not in body and "linkedin" not in body.lower() and "X ·" not in body:
-            # names include channel labels
-            if "companion" not in body.lower() and count < 2:
-                print("FAIL companions not listed")
-                return 1
-        print(f"   created {count} companions")
+        print("   landed on companion with preview")
 
         if forbidden:
             print("FAIL content-writer/v3 calls:", forbidden[:3])

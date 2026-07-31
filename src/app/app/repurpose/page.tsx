@@ -34,6 +34,12 @@ async function repurposeAction(formData: FormData) {
     });
     revalidatePath("/app/assets");
     revalidatePath("/app/repurpose");
+    const first = result.created[0];
+    if (first) {
+      redirect(
+        `/app/assets/${first.assetId}?clientId=${clientId}&versionId=${first.versionId}&packCreated=${result.created.length}&packKind=channel`,
+      );
+    }
     redirect(
       `/app/assets?clientId=${clientId}&campaignId=${result.campaignId}&repurposed=${result.created.length}`,
     );
