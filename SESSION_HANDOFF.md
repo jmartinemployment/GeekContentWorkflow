@@ -44,8 +44,15 @@ All smoke-tested against production unless noted.
 | **Horizon B: in-editor SEO** | **Done 2026-07-31** | `GET /api/gcw/asset-versions/{id}/seo` |
 | **Horizon B: polish ship-check** | **Done 2026-07-31** | `GET /api/gcw/asset-versions/{id}/polish` |
 | **Horizon B: repurpose packs** | **Done 2026-07-31** | `POST /api/gcw/asset-versions/{id}/repurpose` |
+| **Horizon C: video SEO packs** | **Done 2026-07-31** | `POST /api/gcw/asset-versions/{id}/video-seo` |
 
-### Repurpose packs (latest)
+### Video SEO packs (latest)
+
+**Backend `37f1eec`:** `GenerateVideoSeoPackAsync` → titles/description/tags/chapters/thumbnails/shorts companions.
+
+**Frontend `992c118`:** `/app/video-seo` + Generate video SEO pack on pillars; smoke `scripts/smoke-video-seo.py` → **PASS**.
+
+### Repurpose packs (prior)
 
 **Backend `b07e048`:** `GenerateRepurposePackAsync` + catalog; creates companion assets (LinkedIn/X/Instagram/Meta/Google/email) from a pillar version.
 
@@ -135,9 +142,9 @@ All smoke-tested against production unless noted.
 
 ## Next work
 
-**Horizon B drafting excellence** — complete (generate, revise, templates/tones, SEO, polish, repurpose).
+**Horizon B drafting excellence** — complete.
 
-Next: Horizon C (social calendar, image-generator, video SEO) or polish existing surfaces.
+**Horizon C** (in progress): video SEO packs live. Still open: social calendar, image-generator integration, transcript import.
 
 User preference: when they say **continue**, pick the next clear item and implement.
 
@@ -203,7 +210,7 @@ python3 scripts/smoke-brand-voices.py
 
 ```
 Continue Geek Content Workflow from SESSION_HANDOFF.md.
-Horizon B complete (backend b07e048, frontend 4b42093) including repurpose packs.
-Next: Horizon C from LONG_TERM_PLAN.md, or deepen a shipped surface.
+Horizon C started: video SEO packs shipped (backend 37f1eec, frontend 992c118).
+Next: social calendar, GCW↔image-generator visuals, or transcript import.
 Never call /api/content-writer/v3/*.
 ```
