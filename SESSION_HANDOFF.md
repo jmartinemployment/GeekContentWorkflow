@@ -37,8 +37,18 @@ All smoke-tested against production unless noted.
 | Publications + analytics rollups | Done | |
 | **Brand voice links (remaining P1 Brand)** | **Done 2026-07-31** | See brand voices section |
 | **Workspaces (tenant above clients)** | **Done 2026-07-31** | See workspaces section |
+| **Reviews queue + Insights** | **Done 2026-07-31** | `/app/reviews`, `/app/insights` |
 
-### Workspaces (latest completed slice)
+### Reviews + Insights (latest)
+
+**Frontend — GeekContentWorkflow commit `3938bef`:**
+
+- `/app/reviews` — open/resolved comment queue across latest asset versions
+- `/app/insights` — recommendation cards from campaigns/keywords/briefs/assets/reconciliation
+- `listAllClients()` merges workspace + drafting clients; Strategy Map + Assets updated
+- Smoke: `scripts/smoke-reviews-insights.py` → **PASS**
+
+### Workspaces (prior)
 
 **Backend — GeekBackend commit `6c80e3e`:**
 
@@ -83,13 +93,11 @@ All smoke-tested against production unless noted.
 
 ## Next work
 
-**P1 Brand / client intelligence is complete** (profiles, versions, brand voices, workspaces).
+**Near-term PLAN.md P0–P3 backlog is effectively complete** (including Reviews UI + Insights).
 
-Suggested next from PLAN / LONG_TERM:
+Next horizon: [`LONG_TERM_PLAN.md`](./LONG_TERM_PLAN.md) (voice-constrained generation, SEO editor, repurpose, polish layer, etc.).
 
-- Longer-horizon items in `LONG_TERM_PLAN.md`, or polish/migrate drafting clients fully onto workspaces if desired.
-
-User preference: when they say **continue**, pick the next clear PLAN/LONG_TERM item and implement without long planning debates.
+User preference: when they say **continue**, pick the next clear item and implement without long planning debates.
 
 ---
 
@@ -153,8 +161,7 @@ python3 scripts/smoke-brand-voices.py
 
 ```
 Continue Geek Content Workflow from SESSION_HANDOFF.md.
-P1 Brand is done (profiles, voices, workspaces — smoke PASS).
-Next: pick the next PLAN / LONG_TERM_PLAN item and implement via /api/gcw/* facades.
+Near-term PLAN P0–P3 is done (reviews + insights smoke PASS, commit 3938bef).
+Next: first actionable LONG_TERM_PLAN item via /api/gcw/* facades.
 Never call /api/content-writer/v3/*.
-Latest: backend 6c80e3e, frontend 1ac1e74.
 ```
