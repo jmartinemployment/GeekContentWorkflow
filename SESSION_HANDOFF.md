@@ -46,8 +46,15 @@ All smoke-tested against production unless noted.
 | **Horizon B: repurpose packs** | **Done 2026-07-31** | `POST /api/gcw/asset-versions/{id}/repurpose` |
 | **Horizon C: video SEO packs** | **Done 2026-07-31** | `POST /api/gcw/asset-versions/{id}/video-seo` |
 | **Horizon C: visuals via image-generator** | **Done 2026-07-31** | `POST /api/gcw/asset-versions/{id}/visuals` |
+| **Horizon C: social calendar** | **Done 2026-08-01** | `/api/gcw/calendar` + `/app/calendar` |
 
-### Visuals / image-generator (latest)
+### Social calendar (latest)
+
+**Backend `6f4786a`:** CWV4 `SocialScheduleEntry` + migration; repo `social-schedule`; `GcwCalendarController` (`GET/POST/PATCH/DELETE /api/gcw/calendar/entries`). Prefer GitHub push for GeekAPI auto-deploy — concurrent `railway up` often FAILED while GH succeeded.
+
+**Frontend `de7d880` / `d350e88`:** `/app/calendar` week grid; schedule from asset + calendar form; nav link; `geekApiFetch` body double-read fix; smoke `scripts/smoke-calendar.py` → **PASS**.
+
+### Visuals / image-generator (prior)
 
 **image-generator `63c8124`:** Added `youtube-thumbnail` + `og-image` use cases.
 
@@ -223,7 +230,7 @@ python3 scripts/smoke-brand-voices.py
 
 ```
 Continue Geek Content Workflow from SESSION_HANDOFF.md.
-Horizon C: video SEO + visuals via image-generator shipped (backend fb77307, frontend acdcda1).
-Next: social calendar or transcript import.
+Horizon C social calendar shipped (backend 6f4786a, frontend de7d880).
+Next: transcript import from external editors, or deepen shipped surfaces.
 Never call /api/content-writer/v3/*.
 ```
