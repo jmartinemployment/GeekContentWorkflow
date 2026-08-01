@@ -19,6 +19,7 @@ const nav = [
   { href: "/app/media", label: "Media" },
   { href: "/app/reviews", label: "Reviews" },
   { href: "/app/publications", label: "Publications" },
+  { href: "/app/calendar", label: "Calendar" },
   { href: "/app/drafting", label: "AI Drafting" },
   { href: "/app/analytics", label: "Analytics" },
   { href: "/app/insights", label: "Insights" },

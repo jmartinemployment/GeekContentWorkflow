@@ -1023,6 +1023,84 @@ export const VISUAL_USE_CASES = [
   { slug: "og-image", name: "OG image" },
 ] as const;
 
+// —— Social calendar ——
+
+export const CALENDAR_CHANNELS = [
+  "linkedin",
+  "x",
+  "instagram",
+  "facebook",
+  "youtube",
+  "email",
+  "blog",
+] as const;
+
+export const CALENDAR_STATUSES = ["scheduled", "posted", "cancelled"] as const;
+
+export type SocialScheduleEntry = {
+  id: string;
+  ownerId: string;
+  campaignId: string;
+  assetId: string;
+  assetVersionId: string;
+  channel: string;
+  scheduledAtUtc: string;
+  status: string;
+  title: string;
+  notes?: string | null;
+  createdAtUtc: string;
+  updatedAtUtc: string;
+};
+
+export function listCalendarEntries(params?: {
+  campaignId?: string;
+  fromUtc?: string;
+  toUtc?: string;
+}) {
+  const qs = new URLSearchParams();
+  if (params?.campaignId) qs.set("campaignId", params.campaignId);
+  if (params?.fromUtc) qs.set("fromUtc", params.fromUtc);
+  if (params?.toUtc) qs.set("toUtc", params.toUtc);
+  const suffix = qs.toString() ? `?${qs}` : "";
+  return geekApiFetch<SocialScheduleEntry[]>(`/api/gcw/calendar/entries${suffix}`);
+}
+
+export function createCalendarEntry(body: {
+  campaignId: string;
+  assetVersionId: string;
+  channel: string;
+  scheduledAtUtc: string;
+  title?: string;
+  notes?: string;
+}) {
+  return geekApiFetch<SocialScheduleEntry>("/api/gcw/calendar/entries", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
+
+export function updateCalendarEntry(
+  id: string,
+  body: {
+    channel?: string;
+    scheduledAtUtc?: string;
+    status?: string;
+    title?: string;
+    notes?: string | null;
+  },
+) {
+  return geekApiFetch<SocialScheduleEntry>(`/api/gcw/calendar/entries/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(body),
+  });
+}
+
+export function deleteCalendarEntry(id: string) {
+  return geekApiFetch<void>(`/api/gcw/calendar/entries/${id}`, {
+    method: "DELETE",
+  });
+}
+
 export type SeoCheck = {
   id: string;
   label: string;

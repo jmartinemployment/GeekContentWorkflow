@@ -23,6 +23,8 @@ import {
   generateAssetVisual,
   updateAssetStatus,
   VISUAL_USE_CASES,
+  CALENDAR_CHANNELS,
+  createCalendarEntry,
   type ApprovalEvent,
   type ContentAssetVersion,
   type PolishReport,
@@ -347,6 +349,42 @@ async function generateVisualAction(formData: FormData) {
       throw e;
     }
     const msg = e instanceof Error ? e.message : "Visual generation failed";
+    redirect(
+      `/app/assets/${assetId}?clientId=${clientId}&versionId=${versionId}&error=${encodeURIComponent(msg)}`,
+    );
+  }
+}
+
+async function schedulePostAction(formData: FormData) {
+  "use server";
+  const assetId = String(formData.get("assetId") || "");
+  const clientId = String(formData.get("clientId") || "");
+  const versionId = String(formData.get("versionId") || "");
+  const campaignId = String(formData.get("campaignId") || "");
+  const channel = String(formData.get("channel") || "linkedin");
+  const localWhen = String(formData.get("scheduledLocal") || "");
+  if (!versionId || !campaignId || !localWhen) return;
+  try {
+    await createCalendarEntry({
+      campaignId,
+      assetVersionId: versionId,
+      channel,
+      scheduledAtUtc: new Date(localWhen).toISOString(),
+    });
+    revalidatePath("/app/calendar");
+    redirect(
+      `/app/calendar?clientId=${clientId}&campaignId=${campaignId}&scheduled=1`,
+    );
+  } catch (e) {
+    if (
+      typeof e === "object" &&
+      e &&
+      "digest" in e &&
+      String((e as { digest?: string }).digest).startsWith("NEXT_REDIRECT")
+    ) {
+      throw e;
+    }
+    const msg = e instanceof Error ? e.message : "Schedule failed";
     redirect(
       `/app/assets/${assetId}?clientId=${clientId}&versionId=${versionId}&error=${encodeURIComponent(msg)}`,
     );
@@ -953,6 +991,52 @@ export default async function AssetDetailPage({
                 className="rounded-pill bg-gcw-ink px-4 py-2 text-sm font-semibold text-white"
               >
                 Generate visual
+              </button>
+            </form>
+          ) : null}
+
+          {selectedVersion ? (
+            <form
+              action={schedulePostAction}
+              className="mt-10 space-y-3 rounded-2xl border border-gcw-line bg-white p-5"
+            >
+              <h2 className="font-heading text-lg font-medium">
+                Schedule to calendar · v{selectedVersion.versionNumber}
+              </h2>
+              <p className="text-sm text-gcw-muted">
+                Puts this version on the social calendar for a channel and time.
+                You land on the week view so the slot is visible.
+              </p>
+              <input type="hidden" name="assetId" value={asset.id} />
+              <input type="hidden" name="clientId" value={clientId} />
+              <input type="hidden" name="campaignId" value={asset.campaignId} />
+              <input
+                type="hidden"
+                name="versionId"
+                value={selectedVersion.id}
+              />
+              <select
+                name="channel"
+                defaultValue="linkedin"
+                className="w-full rounded-lg border border-gcw-line px-3 py-2 text-sm"
+              >
+                {CALENDAR_CHANNELS.map((c) => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
+                ))}
+              </select>
+              <input
+                type="datetime-local"
+                name="scheduledLocal"
+                required
+                className="w-full rounded-lg border border-gcw-line px-3 py-2 text-sm"
+              />
+              <button
+                type="submit"
+                className="rounded-pill bg-gcw-ink px-4 py-2 text-sm font-semibold text-white"
+              >
+                Add to calendar
               </button>
             </form>
           ) : null}
