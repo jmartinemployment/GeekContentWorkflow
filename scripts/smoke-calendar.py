@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
-"""Signed-in smoke: create asset+version → schedule to calendar → see week slot."""
+"""Signed-in smoke: companion + version → fill week → see post copy + Copy post."""
 
 from __future__ import annotations
 
+import json
 import os
 import re
 import time
@@ -10,7 +11,6 @@ import urllib.error
 import urllib.parse
 import urllib.request
 import http.cookiejar
-from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from playwright.sync_api import TimeoutError as PlaywrightTimeout
@@ -109,7 +109,8 @@ def main() -> int:
     stamp = str(int(time.time()))
     client_name = f"Calendar Smoke {stamp}"
     campaign_name = f"Calendar Camp {stamp}"
-    asset_name = f"Calendar Asset {stamp}"
+    asset_name = f"LinkedIn · Queue smoke {stamp}"
+    marker = f"QUEUE_SMOKE_BODY_{stamp}"
 
     print("0) login")
     cookies = login_via_http(email, password)
@@ -177,62 +178,79 @@ def main() -> int:
             shot(page, "no-campaign")
             return 1
 
-        print("3) create asset + version")
+        print("3) companion + distinctive draft")
         page.goto(
             f"{APP}/app/assets?clientId={client_id}&campaignId={campaign_id}",
             wait_until="networkidle",
         )
-        page.locator('form:has(button:has-text("Create asset")) input[name="name"]').fill(
-            asset_name
-        )
-        page.click('button:has-text("Create asset")')
+        create = page.locator('form:has(button:has-text("Create asset"))')
+        create.locator('input[name="name"]').fill(asset_name)
+        create.locator('select[name="type"]').select_option("companion")
+        create.locator('button:has-text("Create asset")').click()
         page.wait_for_url(re.compile(r"/app/assets/[0-9a-fA-F-]{36}"), timeout=30000)
         page.wait_for_load_state("networkidle")
 
+        doc = {
+            "lede": marker,
+            "sections": [
+                {
+                    "heading": "Hook",
+                    "paragraphs": [
+                        {
+                            "$type": "text",
+                            "runs": [{"text": f"Paste-ready LinkedIn post {stamp}."}],
+                        }
+                    ],
+                }
+            ],
+        }
         version_form = page.locator('form:has(button:has-text("Save version"))')
         if version_form.count() == 0:
-            version_form = page.locator('form:has(button:has-text("Add version"))')
-        if version_form.count() == 0:
             print("FAIL version form missing")
-            print(page.inner_text("body")[:1500])
             shot(page, "version-missing")
             return 1
-        # leave default JSON if present
-        version_form.locator("button").first.click()
+        version_form.locator('textarea[name="bodyDocumentJson"]').fill(
+            json.dumps(doc, indent=2)
+        )
+        version_form.locator('button:has-text("Save version")').click()
         page.wait_for_load_state("networkidle")
         page.wait_for_timeout(1000)
-        shot(page, "01-asset-version")
+        shot(page, "01-companion")
 
-        print("4) schedule from asset")
-        sched = page.locator('form:has(button:has-text("Add to calendar"))')
-        if sched.count() == 0:
-            print("FAIL schedule form missing")
-            shot(page, "schedule-missing")
+        print("4) fill week from companions")
+        page.goto(
+            f"{APP}/app/calendar?clientId={client_id}&campaignId={campaign_id}",
+            wait_until="networkidle",
+        )
+        fill = page.locator('form:has(button:has-text("Fill week from companions"))')
+        if fill.count() == 0:
+            print("FAIL fill week missing")
+            shot(page, "fill-missing")
             return 1
-        when = datetime.now(timezone.utc) + timedelta(hours=4)
-        # datetime-local is local; fill as naive local-ish ISO without Z
-        local = when.astimezone().strftime("%Y-%m-%dT%H:%M")
-        sched.locator('input[name="scheduledLocal"]').fill(local)
-        sched.locator('select[name="channel"]').select_option("linkedin")
-        sched.locator('button:has-text("Add to calendar")').click()
+        fill.locator('button:has-text("Fill week from companions")').click()
         try:
-            page.wait_for_url(re.compile(r"/app/calendar"), timeout=60000)
+            page.wait_for_url(re.compile(r"scheduled="), timeout=60000)
         except PlaywrightTimeout:
-            shot(page, "schedule-stuck")
-            print(page.inner_text("body")[:1500])
+            shot(page, "fill-stuck")
+            print(page.inner_text("body")[:2000])
             return 1
         page.wait_for_load_state("networkidle")
         page.wait_for_timeout(1000)
-        shot(page, "02-calendar")
+        shot(page, "02-queue")
 
         body = page.inner_text("body")
-        if "Scheduled" not in body and "linkedin" not in body.lower():
-            print("FAIL calendar did not show scheduled entry")
-            print(body[:2000])
+        if marker not in body:
+            print("FAIL post body missing from queue")
+            print(body[:2500])
             return 1
         if "linkedin" not in body.lower():
-            print("FAIL linkedin slot missing from week grid")
+            print("FAIL linkedin channel missing")
             print(body[:2000])
+            return 1
+        copy_btn = page.locator('button:has-text("Copy post")')
+        if copy_btn.count() == 0:
+            print("FAIL Copy post control missing")
+            shot(page, "copy-missing")
             return 1
 
         print("5) mark posted")
@@ -242,11 +260,8 @@ def main() -> int:
             page.wait_for_load_state("networkidle")
             page.wait_for_timeout(800)
             shot(page, "03-posted")
-            body2 = page.inner_text("body")
-            if "posted" not in body2.lower():
-                print("WARN posted status not visible, continuing")
         else:
-            print("WARN Posted button missing (entry may be outside week UTC window)")
+            print("WARN Posted button missing")
 
         if forbidden:
             print("FAIL hit /api/content-writer/v3/:")
@@ -254,7 +269,7 @@ def main() -> int:
                 print(" ", u)
             return 1
 
-        print("PASS calendar schedule")
+        print("PASS calendar publishing queue")
         browser.close()
         return 0
 
