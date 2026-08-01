@@ -52,7 +52,7 @@ All smoke-tested against production unless noted.
 
 **Backend `6f4786a`:** CWV4 `SocialScheduleEntry` + migration; repo `social-schedule`; `GcwCalendarController` (`GET/POST/PATCH/DELETE /api/gcw/calendar/entries`). Prefer GitHub push for GeekAPI auto-deploy — concurrent `railway up` often FAILED while GH succeeded.
 
-**Frontend `de7d880` / `d350e88`:** `/app/calendar` week grid; schedule from asset + calendar form; nav link; `geekApiFetch` body double-read fix; smoke `scripts/smoke-calendar.py` → **PASS**.
+**Frontend queue `65e0e67`:** `/app/calendar` is a **copy-first publishing queue** (full post text, Copy post, Fill week from companions, day strip). Smoke `scripts/smoke-calendar.py` → **PASS**.
 
 ### Visuals / image-generator (prior)
 
