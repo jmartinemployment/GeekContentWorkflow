@@ -32,12 +32,15 @@ export async function geekApiFetch<T>(
   }
 
   const res = await fetch(url, { ...init, headers, cache: "no-store" });
+  const raw = await res.text();
   if (!res.ok) {
-    let body: unknown;
-    try {
-      body = await res.json();
-    } catch {
-      body = await res.text();
+    let body: unknown = raw;
+    if (raw) {
+      try {
+        body = JSON.parse(raw);
+      } catch {
+        body = raw;
+      }
     }
     const message =
       typeof body === "object" && body && "title" in body
@@ -49,9 +52,11 @@ export async function geekApiFetch<T>(
             : `GeekAPI ${res.status}`;
     throw new GeekApiError(message, res.status, body);
   }
-  if (res.status === 204) return undefined as T;
+  if (res.status === 204 || !raw) return undefined as T;
   const ct = res.headers.get("content-type") || "";
-  if (ct.includes("application/json")) return res.json() as Promise<T>;
+  if (ct.includes("application/json")) {
+    return JSON.parse(raw) as T;
+  }
   return undefined as T;
 }
 
