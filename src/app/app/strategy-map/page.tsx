@@ -170,30 +170,35 @@ export default async function StrategyMapPage({
         </p>
       ) : null}
 
-      <form className="mt-8 flex flex-wrap gap-3" method="get">
-        <select
-          name="clientId"
-          defaultValue={selectedClientId}
-          className="rounded-lg border border-gcw-line bg-white px-3 py-2 text-sm"
-        >
-          <option value="">Select client</option>
-          {clients.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.name}
-            </option>
-          ))}
-        </select>
-        <button
-          type="submit"
-          className="rounded-pill border border-gcw-line bg-white px-4 py-2 text-sm font-medium hover:bg-gcw-surface"
-        >
-          Filter
-        </button>
-      </form>
+      <div className="mt-8 flex flex-wrap gap-3 text-sm">
+        {clients.map((c) => (
+          <Link
+            key={c.id}
+            href={`/app/strategy-map?clientId=${c.id}`}
+            className={
+              c.id === selectedClientId
+                ? "font-medium text-gcw-ink underline"
+                : "text-gcw-muted hover:text-gcw-ink"
+            }
+          >
+            {c.name}
+          </Link>
+        ))}
+      </div>
+      {clients.length === 0 ? (
+        <p className="mt-4 text-sm text-gcw-muted">
+          No clients yet — create one under{" "}
+          <Link href="/app/brand-core" className="underline">
+            Brand Core
+          </Link>
+          .
+        </p>
+      ) : null}
 
       {!selectedClientId ? (
         <p className="mt-6 text-sm text-gcw-muted">
-          Select a client (or create one under Brand Core).
+          Click your client name above to open keywords and{" "}
+          <strong className="font-medium text-gcw-ink">New campaign</strong>.
         </p>
       ) : (
         <>

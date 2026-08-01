@@ -124,38 +124,46 @@ export default async function StrategyBriefsPage({
         </p>
       ) : null}
 
-      <form className="mt-8 flex flex-wrap gap-3" method="get">
-        <select
-          name="clientId"
-          defaultValue={selectedClientId}
-          className="rounded-lg border border-gcw-line bg-white px-3 py-2 text-sm"
-        >
-          <option value="">Select client</option>
-          {clients.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.name}
-            </option>
-          ))}
-        </select>
-        <select
-          name="campaignId"
-          defaultValue={selectedCampaignId}
-          className="rounded-lg border border-gcw-line bg-white px-3 py-2 text-sm"
-        >
-          <option value="">Select campaign</option>
+      <div className="mt-8 flex flex-wrap gap-3 text-sm">
+        {clients.map((c) => (
+          <Link
+            key={c.id}
+            href={`/app/strategy-briefs?clientId=${c.id}`}
+            className={
+              c.id === selectedClientId
+                ? "font-medium text-gcw-ink underline"
+                : "text-gcw-muted hover:text-gcw-ink"
+            }
+          >
+            {c.name}
+          </Link>
+        ))}
+      </div>
+
+      {selectedClientId && campaigns.length > 0 ? (
+        <div className="mt-4 flex flex-wrap gap-3 text-sm">
           {campaigns.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.name} · {c.keyword}
-            </option>
+            <Link
+              key={c.id}
+              href={`/app/strategy-briefs?clientId=${selectedClientId}&campaignId=${c.id}`}
+              className={
+                c.id === selectedCampaignId
+                  ? "font-medium text-gcw-ink underline"
+                  : "text-gcw-muted hover:text-gcw-ink"
+              }
+            >
+              {c.name}
+            </Link>
           ))}
-        </select>
-        <button
-          type="submit"
-          className="rounded-pill border border-gcw-line bg-white px-4 py-2 text-sm font-medium hover:bg-gcw-surface"
-        >
-          Filter
-        </button>
-      </form>
+        </div>
+      ) : null}
+
+      {!selectedClientId ? (
+        <p className="mt-6 text-sm text-gcw-muted">
+          Click your client name above, then create a campaign (or open one from
+          Strategy Map).
+        </p>
+      ) : null}
 
       {selectedCampaignId ? (
         <p className="mt-3 text-xs text-gcw-zinc">
